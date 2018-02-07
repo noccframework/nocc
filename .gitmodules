@@ -1,0 +1,6 @@
+[submodule "third_party/rdma_lib"]
+	path = third_party/rdma_lib
+	url = gitlab@ipads.se.sjtu.edu.cn:Windybeing/rdma_lib.git
+[submodule "rdma_lib"]
+	path = rdma_lib
+	url = http://ipads.se.sjtu.edu.cn:1312/Windybeing/rdma_lib.git
