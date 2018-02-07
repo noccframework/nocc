@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<bench>
+  <threads> 1 </threads>
+  <scale>   1 </scale>
+  <servers>
+    <num> 1 </num>
+    <mapping>
+      <a> val01 </a>
+      <a> val02 </a>
+    </mapping>
+  </servers>
+  <exe> noccrad </exe>
+  <routines> 1 </routines>
+
+  <bank>
+    <sp> 25 </sp>
+    <dc> 15 </dc>
+    <payment> 15 </payment>
+    <ts> 15 </ts>
+    <wc> 15 </wc> 
+    <aml> 15 </aml>
+  </bank>
+
+  <tpcc>
+    <new>45</new>
+    <pay>43</pay>
+    <del>4</del>
+    <stock>4</stock>
+    <order>4</order>
+  </tpcc>
+
+</bench>
