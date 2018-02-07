@@ -33,9 +33,18 @@ Be sure to add */nocc/third_party/rdma_lib/lib/ to `LD_LIBRARY_PATH`.
 
 **Run:**
 
-`cd scripts; ./run2.py config7.xml noccocc "-t 12 -c 10 -r 256" micro`
+`cd scripts; ./run2.py config7.xml noccocc "-t 12 -c 10 -r 256" micro`, 
 
-A template config file is `config_template.xml` is listed in the root directory.
+where `t` states for thread used, `c` states for coroutine used and `r` is left for workload.
+
+A template config file:`config_template.xml` is in the root directory.
 
 ***
 
+**Detailed config:**
+
+You can modify `src/config.h`, `src/custom_config.h` and `src/app/config.h` to make customization of different running parameters.
+
+We will soon make a detailed description and better configuration tools for NOCC.
+
+***
