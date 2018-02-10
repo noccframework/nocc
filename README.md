@@ -2,6 +2,25 @@
 
 - We are working hard to make it easy to use.
 
+A snippet of how to use nocc framewirk.
+
+- For one-sided operations
+
+```c++
+// for one-sided RDMA reads, as an exmaple
+int payload = 64; 
+uint64_t remote_addr = 0;        // remote memory address(offset)
+char *buffer = Rmalloc(payload); // allocate a local buffer to store the result
+auto qp = cm->get_rc_qp(qp_id);  // the the qp handler for the target machine
+qp->rc_post_send(IBV_WR_RDMA_READ,buffer,payload,payload,remote_addr,IBV_SEND_SIGNALED,cor_id_); // cor_id: coroutine id
+sched->add_pending(qp,cor_id_); // add the pending request to the scheduler
+indirect_yield();   // yield to other coroutine
+// when executed, the buffer got the results of remote memory
+
+```
+
+
+
 ***
 
 **Dependencies:**
