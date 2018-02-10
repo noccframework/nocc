@@ -12,11 +12,35 @@ int payload = 64;
 uint64_t remote_addr = 0;        // remote memory address(offset)
 char *buffer = Rmalloc(payload); // allocate a local buffer to store the result
 auto qp = cm->get_rc_qp(qp_id);  // the the qp handler for the target machine
-qp->rc_post_send(IBV_WR_RDMA_READ,buffer,payload,payload,remote_addr,IBV_SEND_SIGNALED,cor_id_); // cor_id: coroutine id
+qp->rc_post_send(IBV_WR_RDMA_READ,
+                buffer,
+			    payload,
+                remote_addr,
+                IBV_SEND_SIGNALED,
+                cor_id_); // the current execute app id
 sched->add_pending(qp,cor_id_); // add the pending request to the scheduler
 indirect_yield();   // yield to other coroutine
 // when executed, the buffer got the results of remote memory
+Rfree(buffer);      // can free the buffer after that
+```
 
+- For two-sided(messaging) operations
+
+```c++
+int payload = 64;
+char *msg_buf = Rmalloc(payload);  // send buffer
+char *reply_buf = malloc(payload); // reply buffer
+int id = remote_id; // remote server's id
+rpc_handler->send_reqs(rpc_id, 
+                       payload,
+                       reply_buf,
+                       &id, // the address of server list to send
+                       1,   // number of servers to send
+                       cor_id_);
+indirect_yield();   // yield to other coroutine
+// when executed, the buffer got the results of remote memory
+Rfree(msg_buffer);      // can free the buffer after that
+free(reply_buffer);     
 ```
 
 
