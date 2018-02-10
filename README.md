@@ -2,7 +2,7 @@
 
 - We are working hard to make it easy to use.
 
-A snippet of how to use nocc framewirk.
+A snippet of how to use nocc framework.
 
 - For one-sided operations
 
@@ -14,7 +14,7 @@ char *buffer = Rmalloc(payload); // allocate a local buffer to store the result
 auto qp = cm->get_rc_qp(qp_id);  // the the qp handler for the target machine
 qp->rc_post_send(IBV_WR_RDMA_READ,
                 buffer,
-			    payload,
+		payload,
                 remote_addr,
                 IBV_SEND_SIGNALED,
                 cor_id_); // the current execute app id
