@@ -1,19 +1,15 @@
-#include "all.h"
-#include "config.h"
-
 #include "util/util.h"
 #include "util/spinlock.h"
 #include "util/mapped_log.h"
 #include "util/printer.h"
 
-#include "db/req_buf_allocator.h"
 #include "db/txs/tx_handler.h"
 
 #include "framework.h"
 #include "routine.h"
 #include "backup_worker.h"
 #include "view_manager.h"
-
+#include "req_buf_allocator.h"
 
 // rdma related libs
 #include "rdmaio.h"
@@ -65,7 +61,6 @@ namespace nocc {
   volatile bool running;
   __thread bool init = false;
 
-  //  __thread coroutine_func_t routines_[1 + WORKER_NUM + RO_ROUTINE_NUM] = {NULL,NULL,NULL};
   __thread oltp::BenchWorker *worker = NULL;
   __thread coroutine_func_t *routines_ = NULL;
   __thread TXHandler   **txs_ = NULL;
@@ -185,8 +180,8 @@ namespace nocc {
       if(!init) {
         worker = context;
         /* worker routines related stuff */
-        routines_         = new coroutine_func_t[1 + coroutine_num + RO_ROUTINE_NUM];
-        txs_              = new TXHandler*[1 + coroutine_num + RO_ROUTINE_NUM];
+        routines_         = new coroutine_func_t[1 + coroutine_num];
+        txs_              = new TXHandler*[1 + coroutine_num];
 #if 1
         msg_buf_alloctors = new RPCMemAllocator[1 + coroutine_num];
 #endif

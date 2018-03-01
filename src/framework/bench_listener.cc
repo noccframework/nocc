@@ -1,5 +1,4 @@
 #include "framework.h"
-#include "config.h"
 
 #include <signal.h>
 #include <vector>

@@ -2,7 +2,7 @@
 #include "bench_micro.h"
 
 #include "app/smallbank/bank_worker.h" // using bank's input generator for test
-#include "db/req_buf_allocator.h"
+#include "framework/req_buf_allocator.h"
 
 extern size_t distributed_ratio;
 

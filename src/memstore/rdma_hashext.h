@@ -1,7 +1,7 @@
 #ifndef DRTM_MEM_RDMAHASHEXT_H
 #define DRTM_MEM_RDMAHASHEXT_H
 
-#include "config.h"
+#include "global_config.h"
 
 #include "util/rtm.h"
 #include "util/util.h"

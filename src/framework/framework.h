@@ -4,7 +4,8 @@
 #define NOCC_OLTP_BENCH_WORKER_H
 
 #include "all.h"
-#include "config.h"
+#include "global_config.h"
+#include "./framework/config.h"
 #include "./utils/macros.h"
 #include "./utils/thread.h"
 #include "./utils/spinbarrier.h"
@@ -25,7 +26,9 @@
 #include <string>
 #include <stdint.h>
 
-#define MAX_TX 16
+//#define MAX_TX 16
+#define MASTER_ROUTINE_ID 0
+
 
 using namespace rdmaio;
 using namespace nocc::db;

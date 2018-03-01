@@ -1,5 +1,5 @@
 #include "bench_micro.h"
-#include "db/req_buf_allocator.h"
+#include "framework/req_buf_allocator.h"
 
 #include "ralloc.h"
 

@@ -515,7 +515,7 @@ namespace nocc {
           }
           /* init local tx so that it is not a null value */
           tx_ = txs_[cor_id_];
-          for(int i = 1 + coroutine_num; i < 1 + coroutine_num + RO_ROUTINE_NUM; i++){
+          for(int i = 1 + coroutine_num; i < 1 + coroutine_num; i++){
             txs_[i] = tx_;
           }
           routine_1_tx_ = txs_[1]; // used for report

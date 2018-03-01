@@ -1,5 +1,5 @@
 #include "db_logger.h"
-#include "req_buf_allocator.h"
+#include "./framework/req_buf_allocator.h"
 
 extern size_t nthreads;
 extern size_t current_partition;

@@ -2,6 +2,7 @@
 #define NOCC_DB_TX_LAYER_HANDLER
 
 #include "all.h"
+#include "./db/config.h"
 
 #include "db/remote_set.h"
 #include "db/db_logger.h"

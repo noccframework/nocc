@@ -63,7 +63,7 @@ free(reply_buffer);
 
 - Get RDMA lib
   - git submodule init
-  - git submodule add
+  - git submodule update
 
 
 - Building **Ralloc** in [LibRDMA](http://ipads.se.sjtu.edu.cn:1312/Windybeing/rdma_lib)

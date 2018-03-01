@@ -1,7 +1,7 @@
 #include "all.h"
 #include "forkset.h"
 
-#include "req_buf_allocator.h"
+#include "./framework/req_buf_allocator.h"
 
 namespace nocc {
 

@@ -4,8 +4,7 @@
 #include "config.h"
 
 #include "framework/framework.h"
-
-#include "db/req_buf_allocator.h"
+#include "framework/req_buf_allocator.h"
 
 #include <unistd.h>
 #include <algorithm>

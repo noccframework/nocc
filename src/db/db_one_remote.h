@@ -3,6 +3,7 @@
 
 // This file implements remote fetch operations using one-sided operator
 
+#include "global_config.h"
 #include "framework/rdma_sched.h"
 
 #include "memstore/memdb.h" // for db handler
