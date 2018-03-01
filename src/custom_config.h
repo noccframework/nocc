@@ -72,13 +72,13 @@
 /* reset some setting according to specific implementations  ****************/
 // Warning: Below shall not change!!
 
-#ifndef FARM // start FaRM related setting
+#if !defined(FARM) && !defined(DRTMR) // start FaRM related setting
 
 #undef  CACHING
 #define CACHING 0   // Only one-sided version requires caching
 #endif
 
-#ifdef FARM         // also make some checks
+#if defined(FARM) || defined(DRTMR) // also make some checks
 #undef  FASST
 #define FASST 0     // Only RPC verison can merge read/lock request
 #if ONE_SIDED == 0

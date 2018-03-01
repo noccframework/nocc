@@ -1,6 +1,7 @@
 #include "tpcc_worker.h"
 #include "db/txs/dbtx.h"
 #include "db/txs/db_farm.h"
+#include "db/txs/db_drtmr.h"
 
 #include "db/forkset.h"
 
@@ -85,7 +86,9 @@ namespace nocc {
           assert(ts_manager != NULL);
           txs_[i] = new DBSI(store_,worker_id_,rpc_handler_,ts_manager,i);
 #elif defined(FARM)
-          txs_[i] = new DBFarm(cm,rdma_sched_,store_,worker_id_,rpc_handler_,i);
+          txs_[i] = new DBFarm(cm, rdma_sched_, store_, worker_id_, rpc_handler_, i);
+#elif defined(DRTMR)
+          txs_[i] = new DBDrtmr(cm, rdma_sched_, store_, worker_id_, rpc_handler_, i);
 #else
           fprintf(stderr,"No transaction layer used!\n");
           assert(false);
@@ -315,10 +318,11 @@ namespace nocc {
         bool res = tx_->end(yield);
 #else
         bool res = true;
-#ifndef FARM
+#if !defined(FARM) && !defined(DRTMR)
         tx_->remoteset->update_read_buf();
         tx_->remoteset->update_write_buf();
 #endif
+
 #endif
 
 
@@ -428,9 +432,11 @@ namespace nocc {
 #ifdef  RAD_TX
           RadIterator  iter((DBRad *)tx_, CUST_INDEX, false);
 #elif defined(OCC_TX)
-          DBTXIterator iter((DBTX *)tx_, CUST_INDEX,false);
+          DBTXIterator iter((DBTX *)tx_, CUST_INDEX, false);
 #elif defined(FARM)
-          DBFarmIterator iter((DBFarm *)tx_,CUST_INDEX,false);
+          DBFarmIterator iter((DBFarm *)tx_, CUST_INDEX, false);
+#elif defined(DRTMR)
+          DBDrtmrIterator iter((DBDrtmr *)tx_, CUST_INDEX, false);
 #elif defined(SI_TX)
           SIIterator iter((DBSI *)tx_,CUST_INDEX,false);
 #endif
@@ -589,7 +595,9 @@ namespace nocc {
 #elif  defined(OCC_TX)
           DBTXIterator iter((DBTX *)tx_,NEWO);
 #elif  defined(FARM)
-          DBFarmIterator iter((DBFarm *)tx_,NEWO);
+          DBFarmIterator iter((DBFarm *)tx_, NEWO);
+#elif defined(DRTMR)
+          DBDrtmrIterator iter((DBDrtmr *)tx_, NEWO);
 #elif  defined(SI_TX)
           SIIterator iter((DBSI *)tx_,NEWO);
 #endif
@@ -636,7 +644,9 @@ namespace nocc {
 #elif  defined(OCC_TX)
           DBTXIterator iter1((DBTX *)tx_,ORLI);
 #elif  defined(FARM)
-          DBFarmIterator iter1((DBFarm *)tx_,ORLI);
+          DBFarmIterator iter1((DBFarm *)tx_, ORLI);
+#elif  defined(DRTMR)
+          DBDrtmrIterator iter1((DBDrtmr *)tx_, ORLI);
 #elif  defined(SI_TX)
           SIIterator iter1((DBSI *)tx_,ORLI);
 #endif
@@ -719,9 +729,11 @@ namespace nocc {
 #ifdef RAD_TX
         RadIterator  iter((DBRad *)tx_,ORLI);
 #elif defined(OCC_TX)
-        DBTXIterator iter((DBTX *)tx_,ORLI);
+        DBTXIterator iter((DBTX *)tx_, ORLI);
 #elif defined(FARM)
-        DBFarmIterator iter((DBFarm *)tx_,ORLI);
+        DBFarmIterator iter((DBFarm *)tx_, ORLI);
+#elif defined(DRTMR)
+        DBDrtmrIterator iter((DBDrtmr *)tx_, ORLI);
 #elif defined(SI_TX)
         SIIterator iter((DBSI *)tx_,ORLI);
 #endif
@@ -865,7 +877,9 @@ namespace nocc {
 #elif  defined(OCC_TX)
           DBTXIterator iter((DBTX *)tx_,ORLI);
 #elif  defined(FARM)
-          DBFarmIterator iter((DBFarm *)tx_,ORLI);
+          DBFarmIterator iter((DBFarm *)tx_, ORLI);
+#elif defined(DRTMR)
+          DBDrtmrIterator iter((DBDrtmr *)tx_, ORLI);
 #elif defined(SI_TX)
           SIIterator iter((DBSI *)tx_,ORLI);
 #endif
@@ -967,9 +981,11 @@ namespace nocc {
           RadIterator  citer((DBRad *)tx_,CUST_INDEX ,false);
 #elif  defined(OCC_TX)
           DBTXIterator citer((DBTX *)tx_, CUST_INDEX,false);
-#elif  defined(FARM)
-          DBFarmIterator citer((DBFarm *)tx_,CUST_INDEX,false);
-#elif  defined(SI_TX)
+#elif defined(FARM)
+          DBFarmIterator citer((DBFarm *)tx_, CUST_INDEX, false);
+#elif defined(DRTMR)
+          DBDrtmrIterator citer((DBDrtmr *)tx_, CUST_INDEX, false);
+#elif defined(SI_TX)
           SIIterator citer((DBSI *)tx_,CUST_INDEX,false);
 #endif
 
@@ -1028,6 +1044,8 @@ namespace nocc {
         DBTXIterator iter((DBTX *)tx_,ORDER_INDEX);
 #elif defined(FARM)
         DBFarmIterator iter((DBFarm *)tx_,ORDER_INDEX);
+#elif defined(DRTMR)
+        DBDrtmrIterator iter((DBDrtmr *)tx_,ORDER_INDEX);
 #elif defined(SI_TX)
         SIIterator iter((DBSI *)tx_,ORDER_INDEX);
 #endif
@@ -1171,6 +1189,8 @@ namespace nocc {
           DBTXIterator iter((DBTX *)tx_,NEWO);
 #elif  defined(FARM)
           DBFarmIterator iter((DBFarm *)tx_,NEWO);
+#elif defined(DRTMR)
+          DBDrtmrIterator iter((DBDrtmr *)tx_, NEWO);
 #elif defined(SI_TX)
           SIIterator iter((DBSI *)tx_,NEWO);
 #endif
@@ -1381,7 +1401,7 @@ namespace nocc {
           stock::value *s_value;
 
           // fetch remote objects
-#ifdef FARM // one-sided read
+#if defined(FARM) || defined(DRTMR) // one-sided read
 #if CACHING == 0 // whether use cache
           int idx = tx_->add_to_remote_set(STOC,s_key,WarehouseToPartition(stockKeyToWare(s_key)),yield);
 #else
@@ -1425,7 +1445,7 @@ namespace nocc {
         bool res = tx_->end(yield);
 #else
         bool res = true;
-#ifndef FARM
+#if !defined(FARM) && !defined(DRTMR)
         tx_->remoteset->update_read_buf();
         tx_->remoteset->update_write_buf();
 #endif
@@ -1511,7 +1531,9 @@ namespace nocc {
 #elif defined(OCC_TX)
           DBTXIterator iter((DBTX *)tx_, CUST_INDEX,false);
 #elif defined(FARM)
-          DBFarmIterator iter((DBFarm *)tx_,CUST_INDEX,false);
+          DBFarmIterator iter((DBFarm *)tx_, CUST_INDEX, false);
+#elif defined(DRTMR)
+          DBDrtmrIterator iter((DBDrtmr *)tx_, CUST_INDEX, false);
 #elif defined(SI_TX)
           SIIterator iter((DBSI *)tx_,CUST_INDEX,false);
 #endif
@@ -1729,7 +1751,7 @@ namespace nocc {
 
 #if NAIVE == 3
         // do remote reads earlier
-#ifndef FARM
+#if !defined(FARM) && !defined(DRTMR)
         tx_->remoteset->add_batch_imm(REQ_READ,remote_stocks,num_remote_stocks);
 #else
         for(uint i = 0; i < num_remote_stocks;++i) {
@@ -1812,7 +1834,7 @@ namespace nocc {
         }
 #if NAIVE == 2
 
-#ifndef FARM
+#if !defined(FARM) && !defined(DRTMR)
         // do remote reads here
         tx_->remoteset->add_batch_imm(REQ_READ,remote_stocks,num_remote_stocks);
         indirect_yield(yield);
@@ -1826,7 +1848,7 @@ namespace nocc {
 
 #elif NAIVE == 3
         indirect_yield(yield);
-#ifndef FARM
+#if !defined(FARM) && !defined(DRTMR)
         tx_->remoteset->get_result_imm_batch(0,remote_stocks,num_remote_stocks);
 #else
 #endif  // one-sided version do nothing
@@ -1876,7 +1898,7 @@ namespace nocc {
         bool res = tx_->end(yield);
 #else
         bool res = true;
-#ifndef FARM
+#if !defined(FARM) && !defined(DRTMR)
         tx_->remoteset->update_read_buf();
         tx_->remoteset->update_write_buf();
 #endif

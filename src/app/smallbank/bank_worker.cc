@@ -2,6 +2,7 @@
 #include "db/txs/dbtx.h"
 #include "db/txs/dbsi.h"
 #include "db/txs/db_farm.h"
+#include "db/txs/db_drtmr.h"
 #include "db/forkset.h"
 
 #include "db/txs/si_ts_manager.h"
@@ -504,7 +505,9 @@ namespace nocc {
             remote_helper = new RemoteHelper(store_,total_partition,coroutine_num + 1);
             //#elif defined(SI_TX)
 #elif defined(FARM)
-            txs_[i] = new DBFarm(cm,rdma_sched_,store_,worker_id_,rpc_handler_,i);
+            txs_[i] = new DBFarm(cm, rdma_sched_, store_, worker_id_, rpc_handler_, i);
+#elif defined(DRTMR)
+            txs_[i] = new DBDrtmr(cm, rdma_sched_, store_, worker_id_, rpc_handler_, i);
 #elif defined(SI_TX)
             txs_[i] = new DBSI(store_,worker_id_,rpc_handler_,ts_manager,i);
 #else

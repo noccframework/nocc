@@ -2,6 +2,7 @@
 #include "db/txs/dbtx.h"
 #include "db/txs/dbsi.h"
 #include "db/txs/db_farm.h"
+#include "db/txs/db_drtmr.h"
 
 extern __thread RemoteHelper *remote_helper;
 extern size_t current_partition;
@@ -49,9 +50,11 @@ namespace nocc {
 #ifdef RAD_TX
         RadIterator iter((DBRad *)tx_,ORLI);
 #elif defined(OCC_TX)
-        DBTXTempIterator iter((DBTX *)tx_,ORLI);
+        DBTXTempIterator iter((DBTX *)tx_, ORLI);
 #elif defined(FARM)
-        DBFarmIterator iter((DBFarm *)tx_,ORLI);
+        DBFarmIterator iter((DBFarm *)tx_, ORLI);
+#elif defined(DRTMR)
+        DBDrtmrIterator iter((DBDrtmr *)tx_, ORLI);
 #elif defined(SI_TX)
         SIIterator iter((DBSI *)tx_,ORLI);
 #endif
