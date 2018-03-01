@@ -364,46 +364,18 @@ extern size_t total_partition;
                 uint64_t ret = 0;
 
               read_retry:
-#if 0
-                node->read_ts = MAX(version,node->read_ts);
-                //    asm volatile("" ::: "memory");
-                //    if(unlikely(node->read_ts < version))
-                //      goto read_retry;
-#else
-                //    fprintf(stdout,"sizeof %lu\n",sizeof(struct MemNode));
-                //    assert(sizeof(struct MemNode) == CACHE_LINE_SZ * 2);
                 uint64_t origin = node->read_ts;
                 uint64_t tentative_timestamp = MAX(version,origin);
                 //    fprintf(stdout,"origin val %lu => %lu\n",origin,tentative_timestamp);
-#if 0
-                uint64_t res = __sync_val_compare_and_swap((uint64_t *)(&(node->read_ts)),origin,
-                                                           tentative_timestamp);
-                if(res != origin && res < version)
-                  goto read_retry;
-#else
-                //    fprintf(stdout,"origin lock %lu\n",node->read_lock);
-                //    Acquire((__rtm_spin_lock_t *) (&(node->read_lock)));
-                //    fprintf(stdout,"now lock %lu\n",node->read_lock);
-                if(1)
-                  {
-                    __lock_ts(&(node->read_lock));
-                    node->read_ts = tentative_timestamp;
-                    __release_ts(&(node->read_lock));
-                  }
-                //    Xrelease((__rtm_spin_lock_t *)(&(node->read_lock)));
-
-                //    sleep(1);
-#endif
-                //    asm volatile("" ::: "memory");
-                //    fprintf(stdout,"now val %lu\n",node->read_ts);
-                //    exit(-1);
-#endif
+                {
+                  __lock_ts(&(node->read_lock));
+                  node->read_ts = tentative_timestamp;
+                  __release_ts(&(node->read_lock));
+                }
 
               lock_retry:
                 /* check the locks */
                 uint64_t seq = node->seq;
-                //           worker->yield_next(yield); // dummy skip
-                //fprintf(stdout,"yield back\n");
 #if 1
                 asm volatile("" ::: "memory");
                 if(unlikely(node->lock != 0 && seq < version)) {
@@ -414,13 +386,10 @@ extern size_t total_partition;
                     uint64_t retry_counter = 0;
                     while(true) {
                       /* being locked status */
-                      // yield(routines_[next_coro_id_arr_[this->cor_id_]]);
-                      //yield(routines_[MASTER_ROUTINE_ID]);
                       worker->yield_next(yield);
                       asm volatile("" ::: "memory");
                       uint64_t n_seq = node->seq;
                       uint64_t lock  = node->lock;
-                      //	  asm volatile("" ::: "memory");
                       if(n_seq != seq || lock == 0) {
                         break;
                       }
