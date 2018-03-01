@@ -51,8 +51,6 @@ free(reply_buffer);
 **Dependencies:**
 
 - CMake `>= version 2.8` (For compiling)
-
-
 - Zmq `XX` (May be any version shall be fine, and current version ` >= 4.2.2` has been tested )
 - Zmq C++ binding
 - Boost `1.61.0` (Only tested)
@@ -84,9 +82,9 @@ Be sure to add */nocc/third_party/rdma_lib/lib/ to `LD_LIBRARY_PATH`.
 
 `cd scripts; ./run2.py config7.xml noccocc "-t 12 -c 10 -r 256" micro`, 
 
-where `t` states for thread used, `c` states for coroutine used and `r` is left for workload.
+where `t` states for number of threads used, `c` states for number of coroutines used and `r` is left for workload.
 
-A template config file:`config_template.xml` is in the root directory.
+A template config file:`config_template.xml` is presented in the root directory.
 
 ***
 
