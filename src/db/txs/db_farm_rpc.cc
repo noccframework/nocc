@@ -17,7 +17,7 @@ extern size_t current_partition; // current partition-id
 namespace nocc {
 
   extern __thread oltp::BenchWorker* worker;
-  extern __thread db::RPCMemAllocator *msg_buf_alloctors;
+  extern __thread oltp::RPCMemAllocator *msg_buf_alloctors;
 
   namespace db {
 

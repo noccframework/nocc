@@ -7,7 +7,7 @@ extern size_t coroutine_num;
 
 namespace nocc {
 
-	extern __thread db::RPCMemAllocator *msg_buf_alloctors;
+	extern __thread oltp::RPCMemAllocator *msg_buf_alloctors;
 
 	namespace db {
 

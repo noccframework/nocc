@@ -11,7 +11,7 @@
 
 namespace nocc {
 
-  namespace db {
+  namespace oltp {
 
     // RPC memory allocator
     class RPCMemAllocator {
