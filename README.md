@@ -1,4 +1,5 @@
 **NOCC** framework is aimed to simplify building distributed applications using `RDMA`. 
+It provides functions such as bootstraping RDMA connections and applications workers. 
 
 - We are working hard to make it easy to use.
 
