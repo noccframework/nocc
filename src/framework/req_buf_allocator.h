@@ -4,6 +4,7 @@
 #include "all.h"
 #include "ralloc.h"
 #include "config.h"
+#include "./config.h"
 
 #include <stdint.h>
 #include <queue>

@@ -1,7 +1,7 @@
 #include "config.h"
 
 #include "bench_micro.h"
-#include "db/req_buf_allocator.h"
+#include "framework/req_buf_allocator.h"
 #include <iostream>
 
 #include "util/mapped_log.h"

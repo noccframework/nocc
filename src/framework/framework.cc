@@ -1,19 +1,15 @@
-#include "all.h"
-#include "config.h"
-
 #include "util/util.h"
 #include "util/spinlock.h"
 #include "util/mapped_log.h"
 #include "util/printer.h"
 
-#include "db/req_buf_allocator.h"
 #include "db/txs/tx_handler.h"
 
 #include "framework.h"
 #include "routine.h"
 #include "backup_worker.h"
 #include "view_manager.h"
-
+#include "req_buf_allocator.h"
 
 // rdma related libs
 #include "rdmaio.h"

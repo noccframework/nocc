@@ -1,9 +1,9 @@
 #include "config.h"
 
 #include "db_farm.h"
-#include "framework/framework.h"
 
-#include "db/req_buf_allocator.h"
+#include "framework/framework.h"
+#include "framework/req_buf_allocator.h"
 
 // This file contains RPC sending and receiving of FaRM style processing
 

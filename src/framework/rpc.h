@@ -3,7 +3,8 @@
 
 #include "rdma_msg.h"
 #include "ring_msg.h"
-#include "config.h"
+#include "global_config.h"
+#include "./config.h"
 #include "util/util.h"
 
 #define MAX_RPC_REGISTERED 16

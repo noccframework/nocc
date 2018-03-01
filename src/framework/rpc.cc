@@ -1,5 +1,4 @@
 #include "all.h"
-#include "config.h"
 
 #include "rpc.h"
 #include "ralloc.h"

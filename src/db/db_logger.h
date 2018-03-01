@@ -9,6 +9,8 @@
 
 #include "util/temp_log.h"
 #include "all.h"
+#include "global_config.h"
+#include "./config.h"
 #include "rdmaio.h"
 
 

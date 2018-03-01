@@ -20,12 +20,6 @@
 
 /* comment *******************************************************************/
 
-//**** log parameters *********
-#define RAD_LOG 0 // whether to log timer log information
-#define RPC_LOG 0
-#define TEST_LOG 0
-//***************************//
-
 #define USE_LOGGER 1
 #define LOGGER_USE_RPC 2
 #define USE_BACKUP_STORE 1
@@ -38,7 +32,6 @@
 /* TX execution flag  ********************************************************/
 #define ONLY_EXE 0     // only exe phase
 #define NO_ABORT 0     // does not retry if the TX is abort, and do the execution
-#define NO_TS    0     // In SI, does no manipulate the TS using RDMA
 #define OCC_RETRY      // OCC does not issue another round of checks
 #define OCC_RO_CHECK 1 // whether do ro validation of OCC
 

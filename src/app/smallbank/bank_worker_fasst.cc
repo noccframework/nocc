@@ -6,10 +6,10 @@
 #include "db/txs/dbsi.h"
 #include "db/txs/si_ts_manager.h"
 
-#include "db/req_buf_allocator.h"
 #include "db/forkset.h"
 
 #include "framework/routine.h"
+#include "framework/req_buf_allocator.h"
 
 #include "util/util.h"
 

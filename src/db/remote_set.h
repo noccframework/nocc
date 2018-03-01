@@ -3,6 +3,7 @@
 
 #include "all.h"
 #include "config.h"
+#include "./db/config.h"
 #include "db_statistics_helper.h"
 #include "memstore/memstore.h"
 
