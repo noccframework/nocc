@@ -1,4 +1,5 @@
 #include "tpcc_worker.h"
+#include "db/txs/dbrad.h"
 #include "db/txs/dbtx.h"
 #include "db/txs/dbsi.h"
 #include "db/txs/db_farm.h"
@@ -12,20 +13,20 @@ namespace nocc {
 
     void TpccWorker::stock_level_piece(yield_func_t &yield,int id,int cid,char *input) {
 
-      StockLevelInput  *header = (StockLevelInput *)input;      
+      StockLevelInput  *header = (StockLevelInput *)input;
       StockLevelInputPayload *p = (StockLevelInputPayload *)(input + sizeof(StockLevelInput));
       int threshold = header->threshold;
 
 #ifdef SI_TX
       uint64_t timestamp = (uint64_t )(&(header->ts_vec));
-#else      
+#else
       uint64_t timestamp = header->timestamp;
-#endif      
+#endif
       assert(header->num > 0);
 #ifdef OCC_TX
       RemoteHelper *h =  remote_helper;
       h->begin(_QP_ENCODE_ID(id,cid + 1));
-#endif      
+#endif
 
       int res = 0;
       /* parse the input */
@@ -41,11 +42,11 @@ namespace nocc {
         //goto END;
         assert(d_seq != 0);
         uint64_t cur_next_o_id = v_d.d_next_o_id;
-	
+
         const int32_t lower = cur_next_o_id >= STOCK_LEVEL_ORDER_COUNT ? (cur_next_o_id - STOCK_LEVEL_ORDER_COUNT) : 0;
         uint64_t start = makeOrderLineKey(p[i].warehouse_id, p[i].district_id, lower, 0);
         uint64_t end   = makeOrderLineKey(p[i].warehouse_id, p[i].district_id, cur_next_o_id, 0);
-	
+
 #ifdef RAD_TX
         RadIterator iter((DBRad *)tx_,ORLI);
 #elif defined(OCC_TX)
@@ -56,7 +57,7 @@ namespace nocc {
         SIIterator iter((DBSI *)tx_,ORLI);
 #endif
         iter.Seek(start);
-	
+
         while(iter.Valid()) {
           int64_t ol_key = iter.Key();
           if(ol_key >= end) break;
@@ -86,7 +87,7 @@ namespace nocc {
       rpc_handler_->send_reply(sizeof(StockLevelReply),id,cid);
 
       this->context_transfer();
-    }    
+    }
 
   };
 };

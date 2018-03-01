@@ -208,7 +208,7 @@ namespace nocc {
       TpceMainRunner::TpceMainRunner (std::string &config_file)
         : BenchRunner(config_file)
       {
-        DBRad::GlobalInit();
+        //DBRad::GlobalInit();
 
         /* init parameters */
         // + 1 is now for test only

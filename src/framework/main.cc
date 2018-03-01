@@ -268,7 +268,7 @@ int  main(int argc, char **argv)
 #endif
   } else if(bench_type == "tpce") {
     fprintf(stdout,"using benchmark tpce\n");
-    //test_fn = nocc::oltp::tpce::TpceTest;
+    test_fn = nocc::oltp::tpce::TpceTest;
   } else if(bench_type == "micro") {
     fprintf(stdout,"using benchmark micro\n");
     test_fn = nocc::oltp::micro::MicroTest;

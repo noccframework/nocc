@@ -1,4 +1,5 @@
 #include "tpcc_worker.h"
+#include "db/txs/dbrad.h"
 #include "db/txs/dbtx.h"
 #include "db/txs/db_farm.h"
 

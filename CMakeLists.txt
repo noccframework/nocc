@@ -39,6 +39,7 @@ file(GLOB RDMA_SOURCES "third_party/rdma_lib/src/*.cc" "third_party/micautil/*.c
 set(EGEN_PREFIX src/app/tpce/egen/)
 file(GLOB SOURCES
           "src/app/micro_benches/*.cc" "src/app/tpcc/*.cc"  "src/app/smallbank/*.cc"             # apps
+          "src/app/tpce/*.cc"                                                                    # apps continued 
           "src/framework/*.cc"  "src/framework/utils/*.cc"                                       # framework
           "src/memstore/*.cc"                                                                    # memstore
           "src/db/*.cc" "src/db/txs/*.cc"                                                        # framework + CC
@@ -69,6 +70,9 @@ target_compile_options(noccsi PRIVATE "-DSI_TX")
 add_executable(noccfarm ${SOURCES} ${TPCE_SOURCES} ${RDMA_SOURCES})
 target_compile_options(noccfarm PRIVATE "-DFARM")
 
+add_executable(noccrad ${SOURCES} ${TPCE_SOURCES} ${RDMA_SOURCES})
+target_compile_options(noccrad PRIVATE "-DRAD_TX")
+
 ## Micro with one-sided RDMA
 add_executable(nn ${SOURCES} ${TPCE_SOURCES} ${RDMA_SOURCES})
 target_compile_options(nn PRIVATE "-DRPC=0" "-DOCC_TX")
@@ -78,12 +82,16 @@ add_executable(nr ${SOURCES} ${TPCE_SOURCES} ${RDMA_SOURCES})
 target_compile_options(nr PRIVATE "-DRPC=1" "-DOCC_TX")
 
 
-
+target_link_libraries( noccrad zmq rt ibverbs ssmalloc  boost_system boost_coroutine)
 target_link_libraries( noccocc zmq rt ibverbs ssmalloc  boost_system boost_coroutine)
 target_link_libraries( noccsi  zmq rt ibverbs ssmalloc  boost_system boost_coroutine)
 target_link_libraries( noccfarm  zmq rt ibverbs ssmalloc  boost_system boost_coroutine)
 target_link_libraries( nn  zmq rt ibverbs ssmalloc  boost_system boost_coroutine)
 target_link_libraries( nr  zmq rt ibverbs ssmalloc  boost_system boost_coroutine)
+
+add_custom_command(TARGET noccrad
+                   POST_BUILD
+                   COMMAND mv noccrad scripts)
 
 add_custom_command(TARGET noccocc
                    POST_BUILD

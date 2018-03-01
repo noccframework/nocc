@@ -2,6 +2,7 @@
 // The implementatio is seperate since FaSST requires known read-write set
 
 #include "bank_worker.h"
+#include "db/txs/dbrad.h"
 #include "db/txs/dbtx.h"
 #include "db/txs/dbsi.h"
 #include "db/txs/si_ts_manager.h"
@@ -15,7 +16,6 @@
 
 #include <boost/bind.hpp>
 
-//#define FASST
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
 extern nocc::db::TSManager *ts_manager;
