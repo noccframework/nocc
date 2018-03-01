@@ -63,6 +63,11 @@ free(reply_buffer);
 
 **Build:**
 
+- Get RDMA lib
+  - git submodule init
+  - git submodule add
+
+
 - Building **Ralloc** in [LibRDMA](http://ipads.se.sjtu.edu.cn:1312/Windybeing/rdma_lib)
   - `cd third_party/rdma_lib/`
   - `mkdir lib`
