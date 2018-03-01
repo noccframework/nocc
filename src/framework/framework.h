@@ -25,7 +25,9 @@
 #include <string>
 #include <stdint.h>
 
-#define MAX_TX 16
+//#define MAX_TX 16
+#define MASTER_ROUTINE_ID 0
+
 
 using namespace rdmaio;
 using namespace nocc::db;

@@ -65,7 +65,6 @@ namespace nocc {
   volatile bool running;
   __thread bool init = false;
 
-  //  __thread coroutine_func_t routines_[1 + WORKER_NUM + RO_ROUTINE_NUM] = {NULL,NULL,NULL};
   __thread oltp::BenchWorker *worker = NULL;
   __thread coroutine_func_t *routines_ = NULL;
   __thread TXHandler   **txs_ = NULL;
@@ -185,8 +184,8 @@ namespace nocc {
       if(!init) {
         worker = context;
         /* worker routines related stuff */
-        routines_         = new coroutine_func_t[1 + coroutine_num + RO_ROUTINE_NUM];
-        txs_              = new TXHandler*[1 + coroutine_num + RO_ROUTINE_NUM];
+        routines_         = new coroutine_func_t[1 + coroutine_num];
+        txs_              = new TXHandler*[1 + coroutine_num];
 #if 1
         msg_buf_alloctors = new RPCMemAllocator[1 + coroutine_num];
 #endif

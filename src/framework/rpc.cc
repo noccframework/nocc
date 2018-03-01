@@ -111,9 +111,9 @@ namespace nocc {
         //      msg_bufs_ = new char*
         //for(uint i = 0;i < coroutine_num + 1;++i) {
         for(uint i = 0;i < MAX_INFLIGHT_REPLY;++i) {
-          reply_msg_bufs_[i] = (char *)Rmalloc(MAX_REMOTE_SET_SIZE);
+          reply_msg_bufs_[i] = (char *)Rmalloc(MAX_MSG_SIZE);
           if(reply_msg_bufs_[i] != NULL)
-            memset(reply_msg_bufs_[i],0,MAX_REMOTE_SET_SIZE);
+            memset(reply_msg_bufs_[i],0,MAX_MSG_SIZE);
           else assert(false);
         }
         //      this->current_req_buf_slot_ = 0;
