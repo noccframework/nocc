@@ -22,7 +22,7 @@ extern size_t coroutine_num;                 // number of concurrent request per
 namespace nocc {
 
   extern __thread BenchWorker* worker;
-  extern __thread db::RPCMemAllocator *msg_buf_alloctors;
+  extern __thread oltp::RPCMemAllocator *msg_buf_alloctors;
 #if LOCAL_LOCK_USE_RDMA
 
   const uint64_t worker_space = 40 * 1024 * 1024;

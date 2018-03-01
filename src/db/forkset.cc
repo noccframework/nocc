@@ -5,8 +5,8 @@
 
 namespace nocc {
 
-  extern __thread db::RPCMemAllocator *msg_buf_alloctors;
   using namespace oltp;  // the framework namespace
+  extern __thread RPCMemAllocator *msg_buf_alloctors;
 
   namespace db {
 

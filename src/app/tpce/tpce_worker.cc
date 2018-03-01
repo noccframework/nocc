@@ -50,7 +50,7 @@ namespace nocc {
   // db utilities
   extern __thread ro_func_t *ro_callbacks_;
   extern __thread TXHandler   **txs_;
-  extern __thread db::RPCMemAllocator *msg_buf_alloctors;
+  extern __thread oltp::RPCMemAllocator *msg_buf_alloctors;
 
   static SpinLock exit_lock;
 

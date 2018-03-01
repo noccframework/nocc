@@ -26,10 +26,11 @@ extern size_t current_partition;
 namespace nocc {
 
   extern __thread oltp::BenchWorker* worker;
+  extern __thread oltp::RPCMemAllocator *msg_buf_alloctors;
+
   extern __thread uint *next_coro_id_arr_;
   extern __thread coroutine_func_t *routines_;
 
-  extern __thread db::RPCMemAllocator *msg_buf_alloctors;
 
   namespace db {
 
