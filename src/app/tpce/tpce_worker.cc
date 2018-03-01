@@ -4,7 +4,6 @@
 #include "db/txs/dbsi.h"
 #include "db/txs/db_farm.h"
 
-#include "db/req_buf_allocator.h"
 #include "db/forkset.h"
 
 #include "util/mapped_log.h"
@@ -13,7 +12,7 @@
 #include "egen/EGenGenerateAndLoad.h"
 
 #include "framework/rpc.h"
-
+#include "framework/req_buf_allocator.h"
 
 #include "config.h"
 
