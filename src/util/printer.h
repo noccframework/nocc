@@ -8,6 +8,8 @@
 extern int verbose;
 
 namespace nocc {
+
+
   namespace util {
 
     const int MAX_PRINT_BUF = 1024;
@@ -26,31 +28,11 @@ namespace nocc {
 
         fprintf(out,"%s",buf);
       }
+
     }; // class Debugger
-
-    class SimplePrinter {
-
-    public:
-      SimplePrinter() {
-
-      }
-
-      void thread_local_init();
-
-      template <typename... TS>
-        static inline void
-        assert_printf(bool res,const char *s,TS... args) {
-
-        if(unlikely(!res)) {
-          // assertion false
-          fprintf(stderr,s,args...);
-          assert(false);
-        }
-        // end
-      }
-
-    }; // class Simpleprinter
-
   }
+#define ASSERT_PRINT(exp,file,fmt,...) {if(unlikely(!exp)) {Debugger::debug_fprintf(file,fmt, ##__VA_ARGS__); assert(false);} }
 } // nocc
+
+
 #endif
