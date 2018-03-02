@@ -1,4 +1,4 @@
-#include "config.h"
+#include "global_config.h"
 
 #include "bench_micro.h"
 #include "framework/req_buf_allocator.h"

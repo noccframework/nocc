@@ -1,4 +1,4 @@
-#include "config.h"
+#include "global_config.h"
 
 #include "tpcc_worker.h"
 #include "db/txs/dbtx.h"

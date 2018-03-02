@@ -14,7 +14,7 @@
 #include "framework/rpc.h"
 #include "framework/req_buf_allocator.h"
 
-#include "config.h"
+#include "global_config.h"
 
 #include <boost/bind.hpp>
 #include <queue>

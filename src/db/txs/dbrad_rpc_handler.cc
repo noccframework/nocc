@@ -1,4 +1,4 @@
-#include "config.h"
+#include "./db/config.h"
 #include "dbrad.h"
 #include "util/mapped_log.h"
 

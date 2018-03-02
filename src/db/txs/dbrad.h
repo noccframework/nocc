@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "all.h"
-#include "config.h"
+#include "global_config.h"
 #include "memstore/memdb.h"
 #include "tx_handler.h"
 #include "db/remote_set.h"
