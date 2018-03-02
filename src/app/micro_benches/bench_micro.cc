@@ -186,6 +186,9 @@ namespace nocc {
 					assert(db_logger_ != NULL);
 					break;
 				}
+				case MICRO_TS_STRSS:
+					// pass
+					break;
 				default:
 					assert(false);
 					break;
@@ -350,11 +353,15 @@ namespace nocc {
 					name = "RDMA Atomic multi";fn = MicroRDMAMultiAtomic;
 					break;
 				}
+				case MICRO_TS_STRSS: {
+					name = "TX timestamp stress";fn = MicroTXTs;
+					break;
+				}
 				default:
 					assert(false);
 				}
 				w.push_back(workload_desc(name,double(g_txn_workload_mix[0]) / 100.0,fn));
-
+				Debugger::debug_fprintf(stdout,"[Micro] uses worklaod %s\n",name.c_str());
 				return w;
 			}
 

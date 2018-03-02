@@ -109,6 +109,11 @@ add_custom_command(TARGET noccfarm
                    POST_BUILD
                    COMMAND mv noccfarm scripts)
 
+add_custom_command(TARGET noccsi
+                   POST_BUILD
+                   COMMAND mv noccsi scripts)
+
+
 
 # for the ease of running
 set(CMAKE_INSTALL_PREFIX ./)

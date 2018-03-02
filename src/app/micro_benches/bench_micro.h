@@ -47,7 +47,9 @@ namespace nocc {
 				MICRO_RDMA_READ = 14,
 				MICRO_RDMA_WRITE,
 				MICRO_RDMA_ATOMIC,
-				MICRO_RDMA_ATOMIC_MULTI = 17
+				MICRO_RDMA_ATOMIC_MULTI = 17,
+				// TX related microbenchmarks
+				MICRO_TS_STRSS = 18
 			};
 
 			// main test function
@@ -139,6 +141,9 @@ namespace nocc {
 				// Context: TX issues reads with various payload to remote data store(s)
 				txn_result_t micro_rdma_atomic(yield_func_t &yield);
 				txn_result_t micro_rdma_atomic_multi(yield_func_t &yield);
+
+				// TX related tests
+				txn_result_t micro_tx_ts(yield_func_t &yield);
 
 				/* comment ***************************************************/
 
@@ -245,6 +250,11 @@ namespace nocc {
 
 				static txn_result_t MicroRPCWrite(BenchWorker *w,yield_func_t &yield) {
 					txn_result_t r = static_cast<MicroWorker *>(w)->micro_rpc_write(yield);
+					return r;
+				}
+
+				static txn_result_t MicroTXTs(BenchWorker *w,yield_func_t &yield) {
+					txn_result_t r = static_cast<MicroWorker *>(w)->micro_tx_ts(yield);
 					return r;
 				}
 
