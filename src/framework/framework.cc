@@ -388,7 +388,6 @@ namespace nocc {
 
 
     void BenchWorker::create_qps() {
-
       // FIXME: hard code dev id and port id
       //int use_port = worker_id_ % 2;
       int use_port = 1;
@@ -544,7 +543,6 @@ namespace nocc {
 
     void
     BenchRunner::run() {
-
 #if USE_LOGGER
       Debugger::debug_fprintf(stdout, "Logger enabled, RPC style: %d\n",LOGGER_USE_RPC);
 #else
