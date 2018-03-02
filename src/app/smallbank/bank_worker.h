@@ -4,8 +4,8 @@
 
 #include "all.h"
 
+#include "global_config.h"
 #include "app/config.h"
-#include "config.h"
 
 #include "bank_schema.h"
 

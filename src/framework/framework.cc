@@ -174,7 +174,7 @@ namespace nocc {
       Rfree((void *)recv_buffer);
     }
 
-    void ThreadLocalInit (BenchWorker *context) {
+    void InitThreadContext (BenchWorker *context) {
 
       //    fprintf(stdout,"thread local init\n");
       if(!init) {
@@ -386,11 +386,32 @@ namespace nocc {
 
     BenchWorker::~BenchWorker() { /* TODO*/ }
 
+    void BenchWorker::default_thread_local_init() {
+
+      InitThreadContext(this);
+      // init RDMA related stuffs
+      RThreadLocalInit();   // Rmalloc
+
+      // init coroutine related data
+      RoutineMeta::thread_local_init(256);
+
+      // init scheduling layer
+      rdma_sched_->thread_local_init(); // init rdma sched
+
+      // init rpc_handler
+      rpc_handler_->init();
+      rpc_handler_->thread_local_init();
+
+#if USE_LOGGER
+      this->init_logger();
+#endif
+    }
 
     void BenchWorker::create_qps() {
-      // FIXME: hard code dev id and port id
-      //int use_port = worker_id_ % 2;
+
+      // FIXME: hard-coded RDMA dev id and port id
       int use_port = 1;
+      cm->thread_local_init();
 #if 1
       if(worker_id_ >= util::CorePerSocket()) {
         use_port = 0;
@@ -402,7 +423,7 @@ namespace nocc {
       Debugger::debug_fprintf(stdout,"[Bench worker %d] create qps at dev %d, port %d\n",worker_id_,
                               dev_id,port_idx);
 
-      cm->thread_local_init();
+
       cm->open_device(dev_id);
       cm->register_connect_mr(dev_id); // register memory on the specific device
 #if 1
@@ -428,40 +449,23 @@ namespace nocc {
 
     void BenchWorker::run() {
 
-      // bind the core to improve the performance
+      // bind the core to improve the performance, including initialization
       BindToCore(worker_id_); // really specified to platforms
-      //this->binding(worker_id_);
 
-      /* init ralloc */
-      RThreadLocalInit();
-
-      auto now = std::chrono::system_clock::now();
-      auto now_c = std::chrono::system_clock::to_time_t(now);
-
-      std::stringstream time_buffer;
-      time_buffer << std::put_time(std::localtime(&now_c), "%c");
-
-      //      Debugger::debug_fprintf(stdout,"[Bench worker %d] create qps at %s\n",worker_id_,
-      //time_buffer.str().c_str());
-      // clear the time buffer
-      time_buffer.str(std::string());
-
-      /* create set of qps */
+      // create the context, if necessary
+      // create set of qps
       create_qps();
 
-      // init ring message after QP has been created
+      // create message handlers
       if(cm != NULL) {
 #if USE_UD_MSG == 1
         using namespace rdmaio::udmsg;
-
         rpc_handler_ = new Rpc(NULL,worker_id_);
         //pay attention to UD_MAX_RECV_SIZE and MAX_RECV_SIZE
         msg_handler_ = new UDMsg(cm,worker_id_,
-                                 2048, // for application to use
-                                 //64,        // for micro benchmarks
+                                 2048, // max concurrent msg received
                                  std::bind(&Rpc::poll_comp_callback,rpc_handler_,
-                                           std::placeholders::_1,
-                                           std::placeholders::_2));
+                                           std::placeholders::_1,std::placeholders::_2));
 
         rpc_handler_->message_handler_ = msg_handler_; // reset the msg handler
 #else
@@ -469,45 +473,28 @@ namespace nocc {
         rpc_handler_ = new Rpc(msg_handler_,worker_id_);
 #endif
       } else {
-        assert(false); // no RDMA connection
+        ASSERT_PRINT(false,stderr,"RDMA communication manager creation failes.\n");
       }
 
-      // init RDMA scheduler
+      // create RDMA scheduler
       rdma_sched_ = new RDMA_sched();
+      // comment //////////////////////////////////////////////////////////////
 
-#if USE_LOGGER
-      this->init_logger();
-#endif
-
-      /* init routines */
-      ThreadLocalInit(this);
-      this->thread_local_init();
-      rdma_sched_->thread_local_init();
-
-      // init local scheduling layer
-      RoutineMeta::thread_local_init(256); // the pool has 128 routines
+      // thread local init
+      default_thread_local_init(); // default init
+      this->thread_local_init();   // application specific init
 
       register_callbacks();
+      // comment //////////////////////////////////////////////////////////////
 
-      // init rpc meta data
-      rpc_handler_->init();
-      rpc_handler_->thread_local_init();
-
-
-      now = std::chrono::system_clock::now();
-      now_c = std::chrono::system_clock::to_time_t(now);
-      time_buffer << std::put_time(std::localtime(&now_c), "%c");
-
-      Debugger::debug_fprintf(stdout, "[Bench worker %d] started at %s\n",worker_id_,
-              time_buffer.str().c_str());
-      // clear the time buffer
-      time_buffer.str(std::string());
-
+      // waiting for master to start workers
       this->inited = true;
       while(!this->running) {
         asm volatile("" ::: "memory");
       }
-      //check_rdma_connectivity(worker_id_);
+      // comment //////////////////////////////////////////////////////////////
+
+      // starts the new_master_routine
       routines_[0]();
     }
 

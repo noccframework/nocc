@@ -1,4 +1,5 @@
-#include "config.h"
+#include "global_config.h"
+#include "db/config.h"
 
 #include "db_farm.h"
 

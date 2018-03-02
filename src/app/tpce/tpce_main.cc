@@ -1,4 +1,4 @@
-#include "config.h"
+#include "global_config.h"
 #include "tpce_schema.h"
 #include "tpce_worker.h"
 #include "memstore/memdb.h"
@@ -110,11 +110,6 @@ namespace nocc {
       // main in TPCE
       void TpceTest(int argc, char **argv) {
         // simple environment checks
-#if USE_UD_MSG == 1
-        fprintf(stdout,"TPC-E cannot use UD msg.\n");
-        assert(false);
-#endif
-
         fprintf(stdout,"tpce benchmark bootstraping...\n");
 
         TpceMainRunner runner(nocc::oltp::config_file_name);

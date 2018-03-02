@@ -2,7 +2,6 @@
 #define UTIL_TEMP_LOGGER_H
 
 #include "ralloc.h"
-#include "config.h"
 
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #define likely(x)   __builtin_expect(!!(x), 1)
@@ -20,8 +19,8 @@ public:
 	char *start_, *current_, *end_;
 
 	uint32_t alloced_size_;
-	std::set<int> mac_backups_;	// 
-	std::set<int> partitions_;	// 
+	std::set<int> mac_backups_;	//
+	std::set<int> partitions_;	//
 
 	uint32_t reserved_size_, reply_buf_size_;
 	int *remote_mac_ids_; 	// remote machines to be written
@@ -42,7 +41,7 @@ public:
 			reserved_size_(reserved_size),
 			reply_buf_size_(reply_buf_size),
 			alloced_size_(0){
-		
+
 		remote_mac_ids_ = new int[num_nodes];
 		if(reply_buf_size_)
 			remote_mac_reps_ = new char[reply_buf_size_];
@@ -61,7 +60,7 @@ public:
 	void open(){
 		assert(in_use_ == false);
 		alloced_size_ = base_alloc_size_;
-		
+
 		mem_start_ = (char*)Rmalloc(alloced_size_);
 		assert(mem_start_ != NULL);
 		assert(((uint64_t)mem_start_) % ROUND_UP_BASE == 0);

@@ -2,7 +2,7 @@
 #define NOCC_OLTP_TPCC_WORKER_H
 
 #include "all.h"
-#include "config.h"
+#include "global_config.h"
 #include "./app/config.h"
 
 #include "tpcc_schema.h"

@@ -3,7 +3,7 @@
 
 #include "all.h"
 #include "./app/config.h"  // application specific config
-#include "config.h"        // global config
+#include "global_config.h" // global config
 #include "db/db_statistics_helper.h"
 
 #include "framework/backup_worker.h"

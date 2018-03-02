@@ -1,7 +1,7 @@
-#include "db_farm.h"
-
 #include "all.h"
-#include "config.h"
+
+#include "global_config.h"
+#include "./db/config.h"
 
 #include "framework/framework.h"
 #include "framework/req_buf_allocator.h"
@@ -10,6 +10,8 @@
 #include <algorithm>
 
 #include <functional> // for std::bind
+
+#include "db_farm.h"
 
 #define MAXSIZE 1024
 #define META_LENGTH 16
@@ -24,7 +26,6 @@ namespace nocc {
   extern __thread BenchWorker* worker;
   extern __thread oltp::RPCMemAllocator *msg_buf_alloctors;
 #if LOCAL_LOCK_USE_RDMA
-
   const uint64_t worker_space = 40 * 1024 * 1024;
   char* rdma_buf = NULL;
 #endif

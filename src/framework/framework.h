@@ -176,6 +176,7 @@ namespace nocc {
                   DBLogger *db_logger = NULL);
       void run();
       void create_qps();
+      void default_thread_local_init();
 
       // simple wrapper to the underlying routine layer
       inline void context_transfer() {
