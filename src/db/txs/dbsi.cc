@@ -250,27 +250,31 @@ namespace nocc {
 
 
         DBSI::DBSI(MemDB *tables,int t_id,Rpc *rpc,TSManager *tm,int c_id)
-        : txdb_(tables), thread_id(t_id),rpc_handler_(rpc),
-        abort_(false),ts_manager_(tm),
-        TXHandler(c_id) // farther class
+            : txdb_(tables), thread_id(t_id),rpc_handler_(rpc),
+              abort_(false),ts_manager_(tm),
+              TXHandler(c_id) // farther class
         {
-            /* register rpc handlers */
+            // register rpc handlers
             using namespace std::placeholders;
             rpc_handler_->register_callback(std::bind(&DBSI::get_rpc_handler,this,_1,_2,_3,_4),RPC_READ);
             rpc_handler_->register_callback(std::bind(&DBSI::lock_rpc_handler,this,_1,_2,_3,_4),RPC_LOCK);
             rpc_handler_->register_callback(std::bind(&DBSI::release_rpc_handler,this,_1,_2,_3,_4),RPC_RELEASE);
-            //rpc_handler_->register_callback(std::bind(&DBSI::commit_rpc_handler,this,_1,_2,_3),RPC_COMMIT);
             rpc_handler_->register_callback(std::bind(&DBSI::commit_rpc_handler2,this,_1,_2,_3,_4),RPC_COMMIT);
+
+
+#if 1
+            // publish the QP vector
+            auto rdma_cm = tm->cm_;
+            for(uint i = 0;i < rdma_cm->get_num_nodes();++i) {
+                auto qp = rdma_cm->get_rc_qp(thread_id,i,1); // use QP at idx 1
+                assert(qp != NULL);
+                qp_vec_.push_back(qp);
+            }
+#endif
+            // update some local variables
             TXHandler::nreadro_locked = 0;
             assert(ts_manager_ != NULL);
 
-            // get qp vector
-#if 1
-            auto rdma_cm = tm->cm_;
-            for(uint i = 0;i < rdma_cm->get_num_nodes();++i) {
-                qp_vec_.push_back(rdma_cm->get_rc_qp(t_id + nthreads + 2,i));
-            }
-#endif
             localinit = false;
         }
 

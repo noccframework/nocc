@@ -6,14 +6,23 @@
 
 #include "util/mapped_log.h"
 
+#include "db/txs/si_ts_manager.h" // for tx micro benchmarks
+
 // for parsing config xml
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
+#include "db/txs/dbrad.h"
+#include "db/txs/dbtx.h"
+#include "db/txs/dbsi.h"
+#include "db/txs/db_farm.h"
+
+
 using namespace std;
 
+// global configure parameters
 extern size_t scale_factor;
 extern size_t nthreads;
 extern uint64_t ops_per_worker;
@@ -24,6 +33,7 @@ extern size_t distributed_ratio;
 using namespace rdmaio;
 
 extern __thread MappedLog local_log;
+extern nocc::db::TSManager *ts_manager;
 
 namespace nocc {
 
@@ -97,7 +107,11 @@ namespace nocc {
 					*val_ptr = (current_partition + 73); //73 is a lovely magic number
 					asm volatile("": : :"memory"); // write barrier
 				}
-				virtual void bootstrap_with_rdma(RdmaCtrl *cm) {}
+				virtual void bootstrap_with_rdma(RdmaCtrl *cm) {
+#ifdef SI_TX
+					ts_manager = new TSManager(cm,0,current_partition,0,nthreads + 1);
+#endif
+				}
 			private:
 				MemDB *store_;
 			};
@@ -186,8 +200,23 @@ namespace nocc {
 					assert(db_logger_ != NULL);
 					break;
 				}
-				case MICRO_TS_STRSS:
-					// pass
+				case MICRO_TS_STRSS:{
+					// init tx data structures
+					for(uint i = 1;i < coroutine_num + 1;++i) {
+#ifdef RAD_TX
+						txs_[i] = new DBRad(NULL,worker_id_,rpc_handler_,i);
+#elif defined(OCC_TX)
+						txs_[i] = new DBTX(NULL,worker_id_,rpc_handler_,i);
+#elif defined(FARM)
+						txs_[i] = new DBFarm(cm,rdma_sched_,NULL,worker_id_,rpc_handler_,i);
+#elif defined(SI_TX)
+						txs_[i] = new DBSI(NULL,worker_id_,rpc_handler_,ts_manager,i);
+#else
+						ASSERT_PRINT(false,stdout,"No transactional layer used.\n");
+#endif
+					} // end init tx handlers for coroutines
+					tx_ = txs_[cor_id_];
+				}
 					break;
 				default:
 					assert(false);
