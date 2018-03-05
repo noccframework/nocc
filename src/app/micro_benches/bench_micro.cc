@@ -91,14 +91,13 @@ namespace nocc {
 					}
 				} // constructer of MicroMainRunner
 
-				virtual void init_put(){}
 				virtual std::vector<BenchLoader *> make_loaders(int partition, MemDB* store){
 					return std::vector<BenchLoader *>();
 				}
 				virtual std::vector<BackupBenchWorker *> make_backup_workers() {
 					return std::vector<BackupBenchWorker *> ();
 				}
-				virtual void init_store(MemDB* &store) {}
+				virtual void init_store(MemDB* &store) { store = new MemDB(); assert(store_ != NULL);}
 				virtual void init_backup_store(MemDB* &store) {}
 				virtual std::vector<BenchWorker *> make_workers();
 				virtual void warmup_buffer(char *ptr) {
@@ -107,13 +106,31 @@ namespace nocc {
 					*val_ptr = (current_partition + 73); //73 is a lovely magic number
 					asm volatile("": : :"memory"); // write barrier
 				}
+
 				virtual void bootstrap_with_rdma(RdmaCtrl *cm) {
 #ifdef SI_TX
 					ts_manager = new TSManager(cm,0,current_partition,0,nthreads + 1);
 #endif
 				}
-			private:
-				MemDB *store_;
+
+				virtual void init_put() {
+					if(micro_type != MICRO_TX_RAD) return; // only test PDI for loading
+
+					assert(store_ != NULL);
+					int meta_size = META_SIZE;
+					store_->AddSchema(TAB,TAB_HASH,sizeof(uint64_t),CACHE_LINE_SZ,META_SIZE);
+
+					auto total_accounts = nthreads * K_NUM;
+					uint loaded = 0;
+					for(uint i = current_partition * total_partition; i < total_accounts * (current_partition + 1);++i) {
+						auto val = new char[meta_size + CACHE_LINE_SZ];
+						memset(val, 0, meta_size);
+						store_->Put(TAB,i,(uint64_t *)val);
+						loaded += 1;
+					}
+					Debugger::debug_fprintf(stderr,"[MICRO] Total %u dummy records loaded.\n",loaded);
+				}
+
 			};
 
 			void MicroTest(int argc,char **argv) {
@@ -200,7 +217,9 @@ namespace nocc {
 					assert(db_logger_ != NULL);
 					break;
 				}
-				case MICRO_TS_STRSS:{
+				case MICRO_TS_STRSS:
+				case MICRO_TX_RAD:
+					{
 					// init tx data structures
 					for(uint i = 1;i < coroutine_num + 1;++i) {
 #ifdef RAD_TX
@@ -384,6 +403,10 @@ namespace nocc {
 				}
 				case MICRO_TS_STRSS: {
 					name = "TX timestamp stress";fn = MicroTXTs;
+					break;
+				}
+				case MICRO_TX_RAD: {
+					name = "TX rad stress"; fn = MicroTXRad;
 					break;
 				}
 				default:

@@ -19,6 +19,8 @@ namespace nocc {
 	namespace oltp {
 
 		namespace micro {
+#define TAB 0       // dummy table used in microbenchmarks
+#define K_NUM 10000 // number of dummy records per thread
 
 			enum RPC_TYPE {
 				RPC_NOP = 1,
@@ -49,7 +51,8 @@ namespace nocc {
 				MICRO_RDMA_ATOMIC,
 				MICRO_RDMA_ATOMIC_MULTI = 17,
 				// TX related microbenchmarks
-				MICRO_TS_STRSS = 18
+				MICRO_TS_STRSS = 18,
+				MICRO_TX_RAD
 			};
 
 			// main test function
@@ -144,6 +147,7 @@ namespace nocc {
 
 				// TX related tests
 				txn_result_t micro_tx_ts(yield_func_t &yield);
+				txn_result_t micro_tx_rad(yield_func_t &yield);
 
 				/* comment ***************************************************/
 
@@ -258,6 +262,10 @@ namespace nocc {
 					return r;
 				}
 
+				static txn_result_t MicroTXRad(BenchWorker *w,yield_func_t &yield) {
+					txn_result_t r = static_cast<MicroWorker *>(w)->micro_tx_rad(yield);
+					return r;
+				}
 
 				char* reply_buf_;   // buf used to receive RPC reply
 				char** reply_bufs_; // buf used to receive RPC reply, one per coroutine

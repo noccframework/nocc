@@ -128,6 +128,7 @@ namespace nocc {
         store->EnableRemoteAccess(CHECK,cm);
 #endif
       }
+
       void BankMainRunner::init_backup_store(MemDB* &store){
         assert(store == NULL);
         store = new MemDB();

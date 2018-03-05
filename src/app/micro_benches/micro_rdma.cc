@@ -21,8 +21,6 @@ namespace nocc {
 
     namespace micro {
 
-
-
       extern uint64_t working_space;
 
       txn_result_t MicroWorker::micro_rdma_atomic(yield_func_t &yield) {

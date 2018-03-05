@@ -306,6 +306,8 @@ namespace nocc {
       {
         this->seed = (seed ^ 0x5DEECE66DL) & ((1L << 48) - 1);
       }
+
+
     private:
 
       inline unsigned long
