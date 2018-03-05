@@ -10,14 +10,16 @@
 
 #include "db/remote_set.h"
 #include "db/db_one_remote.h"
-
 #include "db/db_logger.h"
+#include "db/db_statistics_helper.h"
+
 #include "framework/rdma_sched.h"
 #include "framework/utils/util.h"
 
 #include "memstore/memdb.h"
 
-#include "db/db_statistics_helper.h"
+#include "util/spinlock.h"
+#include "util/txprofile.h"
 
 namespace nocc {
     namespace db {
@@ -126,14 +128,15 @@ namespace nocc {
 
       int write_items_;
 
-
-
       // some less important local variables
       rdmaio::RdmaCtrl *cm_;
 #if LOCAL_LOCK_USE_RDMA
       util::fast_random *random_ = NULL;
       Qp* local_qp_;
 #endif
+
+      static SpinLock slock;
+      static RTMProfile rtmProfile;
 
       /* RPC handlers ********************************************************/
       void lock_rpc_handler(int id,int cid, char *msg,void *arg);

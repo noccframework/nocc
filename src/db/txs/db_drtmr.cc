@@ -1,11 +1,9 @@
 #include "db_drtmr.h"
 
-#include "all.h"
-#include "config.h"
-
 #include "framework/framework.h"
 
 #include "db/req_buf_allocator.h"
+#include "util/rtm.h"
 
 #include <unistd.h>
 #include <algorithm>
@@ -24,11 +22,14 @@ namespace nocc {
 
   extern __thread BenchWorker* worker;
   extern __thread db::RPCMemAllocator *msg_buf_alloctors;
-#if LOCAL_LOCK_USE_RDMA
 
-  const uint64_t worker_space = 40 * 1024 * 1024;
+  SpinLock DBDrtmr::slock;
+  RTMProfile DBDrtmr::rtmProfile;
+#if LOCAL_LOCK_USE_RDMA
+      const uint64_t worker_space = 40 * 1024 * 1024;
   char* rdma_buf = NULL;
 #endif
+
   namespace db {
 
     // first is the rwset operations //////////////////////////////////////////
@@ -423,6 +424,9 @@ namespace nocc {
     }
 
     bool DBDrtmr::end(yield_func_t &yield) {
+
+      bool fallback = false;
+
 #if ONLY_EXE
       return true;
 #endif
@@ -431,7 +435,7 @@ namespace nocc {
 #if 1
       if(!lock_remote(yield)) {
 #if !NO_EXE_ABORT
-    goto ABORT;
+        goto ABORT;
 #endif
       }
 #endif
@@ -439,23 +443,29 @@ namespace nocc {
 #if 1
       if(!validate_remote(yield)){
 #if !NO_EXE_ABORT
-    goto ABORT;
+        goto ABORT;
 #endif
       }
 #endif
 
-#if 1
-      if(!rwset_->lock_all_set()) {
+      // ----------------------   RTM Scope --------------------------
+      {
+        // RTMScope rtm(&rtmProfile, 1,1, &slock);
+        RTMTX::Begin(&slock,&rtmProfile);
+        if(!_xtest()){
+          rwset_->release_all_set();
+          rwset_->lock_all_set();
+          fallback = true;
+      //     slock.Lock();
+        }
+        if(!rwset_->check_local_set()){
 #if !NO_EXE_ABORT
-    goto ABORT;
+          goto ABORT;
 #endif
+        }
+        RTMTX::End(&slock);
       }
-      if(!rwset_->check_local_set()){
-#if !NO_EXE_ABORT
-    goto ABORT;
-#endif
-      }
-
+      // ----------------------   End of RTM Scope --------------------------
 #if USE_LOGGER
       if(db_logger_){
         db_logger_->log_backups(cor_id_);
@@ -464,8 +474,6 @@ namespace nocc {
       }
 #endif
       rwset_->commit_local_write(); // commit local writes
-#endif
-
       commit_remote(); // commit remote writes
       return true;
     ABORT:
@@ -498,6 +506,7 @@ namespace nocc {
       node = txdb_->stores_[tableid]->GetWithInsert(key);
 
     retry:
+      RTMScope rtm(&rtmProfile);
       if(unlikely(node->value == NULL)){
         fprintf(stderr,"get error ,tableid %d, key %lu\n",tableid,key);
         assert(false);
@@ -694,6 +703,7 @@ namespace nocc {
 
     void DBDrtmr::report() {
       REPORT(lock);
+      rtmProfile.reportAbortStatus(); 
       if(rrwset_)
         rrwset_->report();
     }

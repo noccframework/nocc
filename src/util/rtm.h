@@ -136,72 +136,70 @@ class RTMScope {
       stat = _xbegin();
       if(stat == _XBEGIN_STARTED) {
 
-	//Put the global lock into read set
-	if(slock->IsLocked())
-	  _xabort(0xff);
-
-	return;
-
+      //Put the global lock into read set
+      if(slock->IsLocked())
+    	  _xabort(0xff);
+      	return;
       } else {
 
-	retry++;
-	//if (prof!= NULL) prof->recordAbortStatus(stat);	
-	if((stat & _XABORT_NESTED) != 0)
-	  nested++;
-	else if(stat == 0)
-	  zero++;
-	else if((stat & _XABORT_CONFLICT) != 0) {
-	  conflict++;
-	}
-	else if((stat & _XABORT_CAPACITY) != 0)
-	  capacity++;
+      	retry++;
+      	//if (prof!= NULL) prof->recordAbortStatus(stat);	
+      	if((stat & _XABORT_NESTED) != 0)
+      	  nested++;
+      	else if(stat == 0)
+      	  zero++;
+      	else if((stat & _XABORT_CONFLICT) != 0) {
+      	  conflict++;
+      	}
+      	else if((stat & _XABORT_CAPACITY) != 0)
+      	  capacity++;
 
-	if((stat & _XABORT_EXPLICIT) && _XABORT_CODE(stat) == 0xff) {
-	  while(slock->IsLocked())
-	    _mm_pause();
-	}
-	if((stat & _XABORT_EXPLICIT)) {
-	  if(prof != NULL) {
-	    prof->explicitAbortCounts++;
-	  }
-	}
-	if((stat & _XABORT_EXPLICIT) && _XABORT_CODE(stat) == 0x73) {
-	  if(prof != NULL) {
-	    prof->explicitAbortCounts ++;
-	  }
-	  //retry maybe not helpful
-	  break;
-	}
+      	if((stat & _XABORT_EXPLICIT) && _XABORT_CODE(stat) == 0xff) {
+      	  while(slock->IsLocked())
+      	    _mm_pause();
+      	}
+      	if((stat & _XABORT_EXPLICIT)) {
+      	  if(prof != NULL) {
+      	    prof->explicitAbortCounts++;
+      	  }
+      	}
+      	if((stat & _XABORT_EXPLICIT) && _XABORT_CODE(stat) == 0x73) {
+      	  if(prof != NULL) {
+      	    prof->explicitAbortCounts ++;
+      	  }
+      	  //retry maybe not helpful
+      	  break;
+      	}
 
 #if SIMPLERETY
-	if(retry > 100)
-	  break;
+      	if(retry > 100)
+      	  break;
 #else
 
-	int step = 1;
+      	int step = 1;
 
-	//		  if((stat & _XABORT_NESTED) != 0)
-	//			step = NESTSTEP;
-	//break;
-	if (nested > MAXNEST)
-	  break;
-	if(zero > MAXZERO/step) {
-	  break;
-	}
+      	//		  if((stat & _XABORT_NESTED) != 0)
+      	//			step = NESTSTEP;
+      	//break;
+      	if (nested > MAXNEST)
+      	  break;
+      	if(zero > MAXZERO/step) {
+      	  break;
+      	}
 
-	if(capacity > MAXCAPACITY / step) {
-	  break;
-	}
-	if (conflict > MAXCONFLICT/step) {
-	  break;
-	}
+      	if(capacity > MAXCAPACITY / step) {
+      	  break;
+      	}
+      	if (conflict > MAXCONFLICT/step) {
+      	  break;
+      	}
 #endif
 
       }
     }
     slock->Lock();
     if(prof != NULL) {
-#if 0      
+#if 1      
       prof->succCounts++;
       prof->abortCounts += retry;
       prof->capacityCounts += capacity;
