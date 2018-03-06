@@ -312,20 +312,12 @@ namespace nocc {
       nrpc_polled_ += 1;
       struct rpc_header *header = (struct rpc_header *) msg;
 
-      if(header->meta.type == 0) {
+      if(header->meta.type == REQ) {
         // normal rpcs
         try {
 #ifdef TIMER
           rpc_timer.start();
 #endif
-#if 0
-          if(thread_id_ != nthreads) {
-            char *log_buf = next_log_entry(&local_log,64);
-            assert(log_buf != NULL);
-            sprintf(log_buf,"server rpc id %d %p\n",header->meta.rpc_id,msg);
-          }
-#endif
-
           callbacks_[header->meta.rpc_id](from,header->meta.cid,msg + sizeof(struct rpc_header),
                                           (void *)this);
           nrpc_processed_ += 1;
@@ -338,22 +330,15 @@ namespace nocc {
           assert(false);
         }
 
-      } else if (header->meta.type == 1) {
+      } else if (header->meta.type == Y_REQ) {
         // copy the msg
         char *temp = (char *)malloc(header->meta.payload);
         memcpy(temp,msg + sizeof(struct rpc_header),header->meta.payload);
         add_one_shot_routine(from,header->meta.cid,header->meta.rpc_id,temp);
 
-      } else if (header->meta.type == 2) {
+      } else if (header->meta.type == REPLY) {
         // This is a reply
         assert(header->meta.cid < 1 + coroutine_num && header->meta.cid > 0);
-
-#if 0
-        char *log_buf = next_log_entry(&local_log,48);
-        assert(log_buf != NULL);
-        sprintf(log_buf,"cid %d count size %d, msg size %d\n",
-                header->meta.cid,reply_counts_[header->meta.cid],header->meta.payload);
-#endif
 
         if(reply_counts_[header->meta.cid] == 0) {
           fprintf(stdout,"tid %d error, cid %d, size %d\n",thread_id_,header->meta.cid,header->meta.payload);
@@ -368,8 +353,6 @@ namespace nocc {
         memcpy(processed_buf_,msg + sizeof(struct rpc_header),header->meta.payload);
         reply_bufs_[header->meta.cid] += header->meta.payload;
         reply_size_[header->meta.cid] += header->meta.payload;
-
-
 
         reply_counts_[header->meta.cid] -= 1;
         if(reply_counts_[header->meta.cid] == 0){
@@ -425,7 +408,6 @@ namespace nocc {
 
     void
     Rpc::send_reply(int size, int server_id,int cid) {
-      // printf("sned reply to %d\n", server_id);
 #if USE_UD_MSG == 0
       /* again, round up */
       int total_size = size + sizeof(struct rpc_header);
@@ -434,8 +416,7 @@ namespace nocc {
 #endif
 
       struct rpc_header *header = (struct rpc_header *) (reply_msg_buf_ + sizeof(uint64_t));
-      //header->reqs =  2;
-      header->meta.type = 2;
+      header->meta.type = REPLY;
       header->meta.payload = size;
       header->meta.cid = cid;
 
@@ -444,42 +425,24 @@ namespace nocc {
                                       current_partition,size);
 #endif
 
-#if USE_UD_MSG == 0
+#if USE_UD_MSG == 0 // RC msg does need explicit header
       *((uint64_t *)reply_msg_buf_) = total_size;
       *((uint64_t *)(reply_msg_buf_ + sizeof(uint64_t) + total_size)) = total_size;
       assert(total_size < MAX_REMOTE_SET_SIZE);
 
-      //#if TEST_LOG
-#if 0
-        char *log_buf = next_log_entry(&local_log,32);
-        assert(log_buf != NULL);
-        sprintf(log_buf,"Reply size %lu, rpc %lu\n",size,header->counter);
-        assert(false);
-#endif
-
-      //message_handler_->force_sync(&server_id,1);
       Qp::IOStatus res = message_handler_->send_to(server_id,reply_msg_buf_,total_size);
       assert(res == Qp::IO_SUCC);
 #else
-#if 0
+#if 1
       Qp::IOStatus res = message_handler_->send_to(server_id,
                                                    (char *)reply_msg_buf_ + sizeof(uint64_t),
                                                  size + sizeof(rpc_header));
-#else
+#else // delayed mode. Does not support one-shot request
       Qp::IOStatus res = message_handler_->post_pending(server_id,
                                                         (char *)reply_msg_buf_ + sizeof(uint64_t),
                                                         size + sizeof(rpc_header));
 #endif
-      //assert(res == Qp::IO_SUCC);
 #endif
-
-#if 0
-      //#if TEST_LOG
-      char *log_buf = next_log_entry(&local_log,32);
-      assert(log_buf != NULL);
-      sprintf(log_buf,"Reply size %lu, \n",size);
-#endif
-
     }
 
     void Rpc::report() {
