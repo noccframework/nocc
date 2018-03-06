@@ -181,7 +181,7 @@ namespace nocc {
         worker = context;
         /* worker routines related stuff */
         routines_         = new coroutine_func_t[1 + coroutine_num];
-        txs_              = new TXHandler*[1 + coroutine_num];
+        txs_              = new TXHandler*[1 + coroutine_num + 2];
 #if 1
         msg_buf_alloctors = new RPCMemAllocator[1 + coroutine_num];
 #endif
@@ -245,6 +245,8 @@ namespace nocc {
         auto next = routine_header->next_;
         //if(current_partition != 0) continue;
         if(next != routine_meta) {
+          ASSERT_PRINT((next->id_ <= coroutine_num || next->id_ == 2),
+                       stderr,"err id %d, coroutine_num %d\n",next->id_,coroutine_num);
           context->tx_ = txs_[next->id_];
           context->cor_id_ = next->id_;
           context->routine_meta_ = next;

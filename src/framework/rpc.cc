@@ -311,6 +311,7 @@ namespace nocc {
 
       nrpc_polled_ += 1;
       struct rpc_header *header = (struct rpc_header *) msg;
+      //fprintf(stdout,"receive req from %d,type %d @%d\n",from,header->meta.type,thread_id_);
 
       if(header->meta.type == REQ) {
         // normal rpcs
@@ -335,7 +336,7 @@ namespace nocc {
         char *temp = (char *)malloc(header->meta.payload);
         memcpy(temp,msg + sizeof(struct rpc_header),header->meta.payload);
         add_one_shot_routine(from,header->meta.cid,header->meta.rpc_id,temp);
-
+        //fprintf(stdout,"add done\n");
       } else if (header->meta.type == REPLY) {
         // This is a reply
         assert(header->meta.cid < 1 + coroutine_num && header->meta.cid > 0);

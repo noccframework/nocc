@@ -43,7 +43,7 @@ namespace nocc {
 
     struct RoutineMeta {
 
-      RoutineMeta() {active_ = false; }
+      RoutineMeta() {active_ = false;  id_ = 0;}
 
       static void register_callback(one_shot_func_t callback,int id);
       static void thread_local_init(int num_ros = 0);
