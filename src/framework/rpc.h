@@ -91,10 +91,10 @@ namespace nocc {
       // API for broadcasting
       int   send_reqs(int rpc_id,int size,int *server_lists, int server_num,int cid); /* need not reply */
       int   send_reqs(int rpc_id,int size,char *reply_buf,int *server_lists,
-                      int server_num, int cid,int type = 0);  /* shall receive reply*/
+                      int server_num, int cid,int type = REQ);  /* shall receive reply*/
 
       int   prepare_multi_req(char *reply_buf,int num_of_replies,int cid);
-      int   append_req(char *msg,int rpc_id,int size,int server_id,int cid,int type = 0);
+      int   append_req(char *msg,int rpc_id,int size,int server_id,int cid,int type = REQ);
       // ud can use doorbell batching, which is different from RC based RPC
       int   append_req_ud(char *msg,int rpc_id,int size,int server_id,int cid);
       int   end_req_ud() { message_handler_->flush_pending(); }// doorbell batching requires additional processing
