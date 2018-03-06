@@ -142,13 +142,13 @@ namespace nocc {
 #endif
     }
 
-    int Rpc::append_req(char *msg,int rpc_id,int size,int server_id,int cid) {
+    int Rpc::append_req(char *msg,int rpc_id,int size,int server_id,int cid,int type) {
 
       set_msg(msg);
 
       // set the RPC header
       volatile struct rpc_header *header = (volatile struct rpc_header *)(msg_buf_ + sizeof(uint64_t));
-      header->meta.type = 0;
+      header->meta.type = type;
       header->meta.rpc_id  = rpc_id;
       header->meta.payload = size;
       header->meta.cid = cid;
