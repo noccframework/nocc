@@ -138,9 +138,11 @@ namespace nocc {
 				runner.run();
 			}
 
-			MicroWorker::MicroWorker(unsigned int worker_id,unsigned long seed,int micro_type,
+			MicroWorker::MicroWorker(unsigned int worker_id,unsigned long seed,int micro_type,MemDB *store,
 									 uint64_t total_ops, spin_barrier *a,spin_barrier *b,BenchRunner *r):
-				BenchWorker(worker_id,true,seed,total_ops,a,b,r){
+				BenchWorker(worker_id,true,seed,total_ops,a,b,r),
+				store_(store)
+			{
 
 				uint64_t free_offset = free_buffer - rdma_buffer;
 				uint64_t total_free  = r_buffer_size - free_offset;
@@ -223,13 +225,13 @@ namespace nocc {
 					// init tx data structures
 					for(uint i = 1;i < coroutine_num + 1;++i) {
 #ifdef RAD_TX
-						txs_[i] = new DBRad(NULL,worker_id_,rpc_handler_,i);
+						txs_[i] = new DBRad(store_,worker_id_,rpc_handler_,i);
 #elif defined(OCC_TX)
-						txs_[i] = new DBTX(NULL,worker_id_,rpc_handler_,i);
+						txs_[i] = new DBTX(store_,worker_id_,rpc_handler_,i);
 #elif defined(FARM)
-						txs_[i] = new DBFarm(cm,rdma_sched_,NULL,worker_id_,rpc_handler_,i);
+						txs_[i] = new DBFarm(cm,rdma_sched_,store_,worker_id_,rpc_handler_,i);
 #elif defined(SI_TX)
-						txs_[i] = new DBSI(NULL,worker_id_,rpc_handler_,ts_manager,i);
+						txs_[i] = new DBSI(store_,worker_id_,rpc_handler_,ts_manager,i);
 #else
 						ASSERT_PRINT(false,stdout,"No transactional layer used.\n");
 #endif
@@ -422,7 +424,8 @@ namespace nocc {
 
 				std::vector<BenchWorker *> ret;
 				for(uint i = 0;i < nthreads; ++i) {
-					ret.push_back(new MicroWorker(i,r.next(),micro_type,ops_per_worker,&barrier_a_,&barrier_b_,
+					ret.push_back(new MicroWorker(i,r.next(),micro_type,store_,ops_per_worker,
+												  &barrier_a_,&barrier_b_,
 												  static_cast<BenchRunner *>(this)));
 				}
 

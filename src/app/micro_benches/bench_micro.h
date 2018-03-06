@@ -96,7 +96,7 @@ namespace nocc {
 
 
 			public:
-				MicroWorker(unsigned int worker_id,unsigned long seed,int micro_type,
+				MicroWorker(unsigned int worker_id,unsigned long seed,int micro_type,MemDB *store,
 							uint64_t total_ops, spin_barrier *a,spin_barrier *b,BenchRunner *c);
 
 				virtual void register_callbacks();
@@ -266,6 +266,8 @@ namespace nocc {
 					txn_result_t r = static_cast<MicroWorker *>(w)->micro_tx_rad(yield);
 					return r;
 				}
+
+				MemDB *store_;
 
 				char* reply_buf_;   // buf used to receive RPC reply
 				char** reply_bufs_; // buf used to receive RPC reply, one per coroutine

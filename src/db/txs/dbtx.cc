@@ -550,7 +550,6 @@ uint64_t DBTX::get_ro(int tableid,uint64_t key,char *val,yield_func_t &yield) {
   MemNode *node = NULL;
   int len = txdb_->_schemas[tableid].vlen;
   node = txdb_->stores_[tableid]->GetWithInsert(key);
-
  retry:
   uint64_t seq = node->seq;
   asm volatile("" ::: "memory");
@@ -578,7 +577,7 @@ uint64_t DBTX::get_ro(int tableid,uint64_t key,char *val,yield_func_t &yield) {
   item.key = key;
   item.seq = seq;
   item.len = len;
-  item.ro  = false;
+  item.ro  = true;
   item.node = (MemNode *)node;
 
   rwset->Add(item);
@@ -1085,7 +1084,6 @@ bool DBTX::end_fasst(yield_func_t &yield) {
 
 bool
 DBTX::end(yield_func_t &yield) {
-  //assert(false);
 
 #if ONLY_EXE
   remoteset->update_read_buf();
@@ -1093,7 +1091,6 @@ DBTX::end(yield_func_t &yield) {
   return true;
 #endif
   if(abort_) {
-    assert(false);
     return false;
   }
   remoteset->need_validate_ = true; // let remoteset to send the validate
@@ -1125,7 +1122,7 @@ DBTX::end(yield_func_t &yield) {
 #else
   remoteset->clear_for_reads();
 #endif
-  //    fprintf(stdout,"remote set validate pass\n");
+
 #if 0
   if(!readset->Validate()) {
     goto ABORT;
@@ -1149,7 +1146,9 @@ DBTX::end(yield_func_t &yield) {
     worker->indirect_must_yield(yield);
     db_logger_->log_end(cor_id_);
   }
+
 #endif
+
 #if COMMIT_NAIVE
   remoteset->commit_remote_naive(yield);
 #else 
