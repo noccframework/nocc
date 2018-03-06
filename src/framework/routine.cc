@@ -78,6 +78,10 @@ namespace nocc {
       one_shot_callbacks = new one_shot_func_t[MAX_ONE_SHOT_CALLBACK];
     }
 
+    void RoutineMeta::register_callback(one_shot_func_t callback,int id) {
+      register_one_shot(callback,id);
+    }
+
     void global_init() {
       // not used anymore
       assert(false);
