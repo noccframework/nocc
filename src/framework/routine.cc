@@ -2,6 +2,7 @@
 #include <boost/bind.hpp>
 
 #include "routine.h"
+#include "framework.h"
 
 extern int    coroutine_num; // global config parameter
 
@@ -9,6 +10,7 @@ namespace nocc {
 
   // default routines to bind
   extern __thread coroutine_func_t *routines_;
+  extern __thread BenchWorker* worker;
 
   namespace oltp {
 
@@ -16,8 +18,8 @@ namespace nocc {
 
     // add a routine chain to Rpc
     __thread RoutineMeta *next_routine_array;
-    __thread RoutineMeta *routine_tailer;
-    __thread RoutineMeta *routine_header;
+    __thread RoutineMeta *routine_tailer;   // the header of the scheduler
+    __thread RoutineMeta *routine_header;   // the tailer of the scheduler
 
     __thread RoutineMeta *one_shot_routine_pool;
 
@@ -39,7 +41,8 @@ namespace nocc {
         // yield back
         //fprintf(stdout,"one shot done\n");
         // need to reset-the context if necessary
-        routine->yield_from_routine_list(yield);
+        //routine->yield_from_routine_list(yield);
+        worker->indirect_must_yield(yield);
       }
     }
 
