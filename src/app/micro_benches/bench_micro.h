@@ -163,6 +163,9 @@ namespace nocc {
 				void write_rpc_handler(int id,int cid,char *msg,void *arg);
 				void batch_write_rpc_handler(int id,int cid,char *msg,void *arg);
 
+				// used for tx tests
+				void tx_one_shot_handler(yield_func_t &yield,int id,int cid,char *input);
+
 				workload_desc_vec_t get_workload() const ;
 
 			private:
