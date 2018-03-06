@@ -245,8 +245,6 @@ namespace nocc {
         auto next = routine_header->next_;
         //if(current_partition != 0) continue;
         if(next != routine_meta) {
-          ASSERT_PRINT((next->id_ <= coroutine_num || next->id_ == 2),
-                       stderr,"err id %d, coroutine_num %d\n",next->id_,coroutine_num);
           context->tx_ = txs_[next->id_];
           context->cor_id_ = next->id_;
           context->routine_meta_ = next;
