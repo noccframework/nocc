@@ -92,6 +92,10 @@ namespace nocc {
       return next_routine_array + id;
     }
 
+    void inline __attribute__((always_inline)) register_one_shot(one_shot_func_t f,int id) {
+      one_shot_callbacks[id] = f;
+    }
+
     void inline __attribute__((always_inline)) add_to_routine_list(int id) {
       return next_routine_array[id].add_to_routine_list();
     }
