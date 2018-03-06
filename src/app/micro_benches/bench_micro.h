@@ -74,7 +74,6 @@ namespace nocc {
 				micro_cycle_info(){}
 			};
 
-
 			class MicroWorker : public BenchWorker {
 
 				struct ReadReqHeader {
@@ -165,6 +164,7 @@ namespace nocc {
 
 				// used for tx tests
 				void tx_one_shot_handler(yield_func_t &yield,int id,int cid,char *input);
+				void tx_one_shot_handler2(int id,int cid,char *msg,void *arg);
 
 				workload_desc_vec_t get_workload() const ;
 

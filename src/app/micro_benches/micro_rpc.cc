@@ -145,7 +145,7 @@ namespace nocc {
 
         static uint64_t free_offset = free_buffer - rdma_buffer;
         static uint64_t total_free  = r_buffer_size - free_offset;
-        const uint64_t write_space = total_free - size;
+        const  uint64_t write_space = total_free - size;
 
         static const int num_nodes = cm->get_num_nodes();
 

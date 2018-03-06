@@ -294,7 +294,9 @@ namespace nocc {
 																this,_1,_2,_3,_4),RPC_READ); // for test only!
 					break;
 				case MICRO_TX_RAD:
-					RoutineMeta::register_callback(boost::bind(&MicroWorker::tx_one_shot_handler,this,_1,_2,_3,_4),0);
+					RoutineMeta::register_callback(boost::bind(&MicroWorker::tx_one_shot_handler,this,_1,_2,_3,_4),RPC_READ);
+					rpc_handler_->register_callback(boost::bind(&MicroWorker::tx_one_shot_handler2,
+                                                                this,_1,_2,_3,_4),RPC_READ);
 					break;
 				default:
 					// pass
