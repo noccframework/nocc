@@ -339,7 +339,6 @@ namespace nocc {
         }
 
       } else if (header->meta.type == 1) {
-        assert(false);
         // copy the msg
         char *temp = (char *)malloc(header->meta.payload);
         memcpy(temp,msg + sizeof(struct rpc_header),header->meta.payload);
