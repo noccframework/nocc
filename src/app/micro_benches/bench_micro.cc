@@ -419,7 +419,6 @@ namespace nocc {
 					assert(false);
 				}
 				w.push_back(workload_desc(name,double(g_txn_workload_mix[0]) / 100.0,fn));
-				Debugger::debug_fprintf(stdout,"[Micro] uses worklaod %s\n",name.c_str());
 				return w;
 			}
 
