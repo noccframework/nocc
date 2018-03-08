@@ -173,7 +173,9 @@ namespace nocc {
 #if ONE_SIDED == 1
             if(is_primary_){
               wrapper_saving = (char *)Rmalloc(store_->_schemas[SAV].total_len);
+              assert(wrapper_saving != NULL);
               wrapper_check  = (char *)Rmalloc(store_->_schemas[CHECK].total_len);
+              assert(wrapper_check != NULL);
             } else {
               wrapper_saving = new char[meta_size + sizeof(savings::value)];
               wrapper_check  = new char[meta_size + sizeof(checking::value)];
@@ -184,7 +186,6 @@ namespace nocc {
             wrapper_saving = new char[meta_size + sizeof(savings::value)];
             wrapper_check  = new char[meta_size + sizeof(checking::value)];
 #endif
-            assert(wrapper_acct != NULL && wrapper_saving != NULL && wrapper_check != NULL);
 
             uint64_t pid = AcctToPid(i);
             assert(0 <= pid && pid < total_partition);

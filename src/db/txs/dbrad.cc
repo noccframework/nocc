@@ -357,7 +357,35 @@ extern size_t total_partition;
               }
 
               inline uint64_t
-              DBRad::_get_ro_versioned_helper(int tableid, uint64_t key, char *val, uint64_t version,yield_func_t &yield) {
+              DBRad::_get_ro_naive(int tableid,uint64_t key,char *val,uint64_t version,yield_func_t &yield) {
+                int vlen = txdb_->_schemas[tableid].vlen;
+                MemNode *node = txdb_->stores_[tableid]->GetWithInsert(key);
+                uint64_t ret = 0; // return the sequence value
+
+                uint64_t origin = node->read_ts;
+                uint64_t tentative_timestamp = MAX(version,origin);
+
+                volatile uint64_t *lockptr = &(node->lock); // share the lock with writer
+                if(tentative_timestamp == version) {
+              read_retry:
+                  if(*lockptr != 0 |
+                     !__sync_bool_compare_and_swap(lockptr,0,
+                                                   73)) {
+                    worker->yield_next(yield);
+                    goto read_retry;
+                  }
+                  node->read_ts = tentative_timestamp; // set the timestamp
+                  *lockptr = 0; // release the lock
+                }
+
+                // search the chain to read the value
+                ret = _get_helper(node,val,version,vlen);
+                return ret;
+                // done
+              }
+
+              inline uint64_t DBRad::
+              _get_ro_versioned_helper(int tableid, uint64_t key, char *val, uint64_t version,yield_func_t &yield) {
 
                 int vlen = txdb_->_schemas[tableid].vlen;
                 MemNode *node = txdb_->stores_[tableid]->GetWithInsert(key);
@@ -366,53 +394,60 @@ extern size_t total_partition;
               read_retry:
                 uint64_t origin = node->read_ts;
                 uint64_t tentative_timestamp = MAX(version,origin);
-                //    fprintf(stdout,"origin val %lu => %lu\n",origin,tentative_timestamp);
-                {
+                if(tentative_timestamp != version) {
                   __lock_ts(&(node->read_lock));
                   node->read_ts = tentative_timestamp;
                   __release_ts(&(node->read_lock));
-                }
 
-              lock_retry:
-                /* check the locks */
-                uint64_t seq = node->seq;
+                lock_retry:
+                  /* check the locks */
+                  uint64_t seq = node->seq;
 #if 1
-                asm volatile("" ::: "memory");
-                if(unlikely(node->lock != 0 && seq < version)) {
-                  /* maybe need refinements, or blocking */
-                  /* wait for one-time lock to be released */
-                  {
-                    nreadro_locked += 1;
-                    uint64_t retry_counter = 0;
-                    while(true) {
-                      /* being locked status */
-                      worker->yield_next(yield);
-                      asm volatile("" ::: "memory");
-                      uint64_t n_seq = node->seq;
-                      uint64_t lock  = node->lock;
-                      if(n_seq != seq || lock == 0) {
-                        break;
-                      }
+                  asm volatile("" ::: "memory");
+                  if(unlikely(node->lock != 0 && seq < version)) {
+                    /* maybe need refinements, or blocking */
+                    /* wait for one-time lock to be released */
+                    {
+                      nreadro_locked += 1;
+                      uint64_t retry_counter = 0;
+                      while(true) {
+                        /* being locked status */
+                        worker->yield_next(yield);
+                        asm volatile("" ::: "memory");
+                        uint64_t n_seq = node->seq;
+                        uint64_t lock  = node->lock;
+                        if(n_seq != seq || lock == 0) {
+                          break;
+                        }
 #if 0
-                      retry_counter += 1;
-                      if(retry_counter > 9999999) {
-                        fprintf(stdout,"tableid %d lock %lu, seq %lu, old %lu, node %p, stuch @%d\n",tableid,
-                                lock,node->seq,seq,node,thread_id);
-                        fprintf(stdout,"it is locked by mac %d, thread %d, my %d\n",_QP_DECODE_MAC(node->lock),
-                                _QP_DECODE_INDEX(node->lock) - 1,thread_id);
-                        assert(false);
+                        retry_counter += 1;
+                        if(retry_counter > 9999999) {
+                          fprintf(stdout,"tableid %d lock %lu, seq %lu, old %lu, node %p, stuch @%d\n",tableid,
+                                  lock,node->seq,seq,node,thread_id);
+                          fprintf(std::dout,"it is locked by mac %d, thread %d, my %d\n",_QP_DECODE_MAC(node->lock),
+                                  _QP_DECODE_INDEX(node->lock) - 1,thread_id);
+                          assert(false);
+                        }
+#endif
                       }
-#endif
-                    }
                     /* end wait process */
+                    }
                   }
-                }
+                } // end timestamp set
 #endif
-              retry:
-                seq = node->seq;
-                //    fprintf(stdout,"read node seq %lu, key %lu\n",seq,key);
-                /* traverse the read linked list to find the correspond records */
+                ret = _get_helper(node,val,version,vlen);
+                /* */
+                //    assert(ret != 1);
+                return ret;
+              }
 
+              inline uint64_t DBRad::
+              _get_helper(MemNode *node,char *val,uint64_t version,int vlen) {
+                uint64_t seq = 0;
+retry:
+                seq = node->seq;
+
+                /* traverse the read linked list to find the correspond records */
                 if(seq <= version ) {
                   /* simple case, read the current value */
                   asm volatile("" ::: "memory");
@@ -423,15 +458,12 @@ extern size_t total_partition;
                     asm volatile("" ::: "memory");
                     if(node->seq != seq || seq == 1)
                       goto retry;
-                    ret = seq;
                   } else {
                     /* read a deleted value, currently not supported */
-                    //assert(false);
                     return 0;
                   }
                 } else {
                   /* traverse the old reader's list */
-                  if( seq - version <= 500 ) worker->ntxn_strict_counts_ += 1;
                   /* this is the simple case, and can always success  */
                   char *old_val = (char *)(node->old_value);
                   asm volatile("" ::: "memory");
@@ -443,24 +475,16 @@ extern size_t total_partition;
                   }
                   if(unlikely(old_val == NULL)) {
                     /* cannot find one */
-                    //	if(tableid == 17) {
-                    //	fprintf(stdout,"seq %lu, version %lu node seq %lu, tab %d\n",seq,version,node->seq,
-                    //		tableid);
-                    //	fprintf(stdout,"tableid %d, seq %lu  %lu\n",tableid,node->seq,version);
-                    //assert(false);
-                    //	}
                     return 0;
                   }
 
                   /* cpy */
                   memcpy(val,(char *)old_val + RAD_META_LEN,vlen);
                   assert(rh->version != 0 && rh->version != 1);
-                  ret = rh->version;
+                  seq = rh->version;
                   /* in this case, we do not need to check the lock */
                 }
-                /* */
-                //    assert(ret != 1);
-                return ret;
+                return seq;
               }
 
               uint64_t DBRad::get_cached(int tableid,uint64_t key,char **val) {

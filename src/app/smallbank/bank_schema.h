@@ -4,7 +4,6 @@
 #include "framework/utils/encoder.h"
 #include "framework/utils/inline_str.h"
 #include "framework/utils/macros.h"
-//#include "framework/bench.h"
 
 #define ACCT 0
 #define SAV  1

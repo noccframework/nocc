@@ -19,6 +19,8 @@
 #include "db/txs/dbsi.h"
 #include "db/txs/db_farm.h"
 
+#include "../smallbank/bank_worker.h" // use the smallbank workload for test
+
 
 using namespace std;
 
@@ -119,16 +121,16 @@ namespace nocc {
 					assert(store_ != NULL);
 					int meta_size = META_SIZE;
 					store_->AddSchema(TAB,TAB_HASH,sizeof(uint64_t),CACHE_LINE_SZ,META_SIZE);
+					using namespace nocc::oltp::bank;
 
-					auto total_accounts = nthreads * K_NUM;
-					uint loaded = 0;
-					for(uint i = current_partition * total_partition; i < total_accounts * (current_partition + 1);++i) {
-						auto val = new char[meta_size + CACHE_LINE_SZ];
-						memset(val, 0, meta_size);
-						store_->Put(TAB,i,(uint64_t *)val);
-						loaded += 1;
+					for(uint64_t i = 0;i <= NumAccounts();++i){
+						uint64_t pid = AcctToPid(i);
+						assert(0 <= pid && pid < total_partition);
+						if(pid != current_partition) continue;
+						char *wrapper_acct = new char[meta_size + sizeof(account::value)];
+						memset(wrapper_acct,0,meta_size);
+						store_->Put(TAB,i,(uint64_t *)wrapper_acct);
 					}
-					Debugger::debug_fprintf(stderr,"[MICRO] Total %u dummy records loaded.\n",loaded);
 				}
 
 			};
@@ -183,7 +185,8 @@ namespace nocc {
 				case MICRO_RDMA_WRITE_MULTI:
 				case MICRO_RDMA_RW:
 				case MICRO_RDMA_READ_MULTI:
-				case MICRO_RDMA_SCHED: {
+				case MICRO_RDMA_SCHED:
+					{
 					// connecting QPs
 					for(uint i = 0;i < cm_->get_num_nodes();++i) {
 						Qp *qp = cm_->get_rc_qp(worker_id_,i,1);
@@ -237,6 +240,14 @@ namespace nocc {
 #endif
 					} // end init tx handlers for coroutines
 					tx_ = txs_[cor_id_];
+
+					// connecting QPs
+					for(uint i = 0;i < cm_->get_num_nodes();++i) {
+						Qp *qp = cm_->get_rc_qp(worker_id_,i,1);
+						//Qp *qp = cm_->get_rc_qp(worker_id_ + 8,i,1);
+						qps_.push_back(qp);
+					}
+
 				}
 					break;
 				default:

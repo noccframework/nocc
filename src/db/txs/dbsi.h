@@ -21,8 +21,8 @@ struct _SIValHeader {
     uint64_t  version;
 };
 
-/* timestamp structure 
-   | 1 lock bit | 7 bit server id | server's local counter | 
+/* timestamp structure
+   | 1 lock bit | 7 bit server id | server's local counter |
 */
 #define SI_TS_MASK  (0xffffffffffffff)
 #define SI_SERVER_MASK (0xff)
@@ -42,7 +42,7 @@ namespace nocc  {
             static void GlobalInit();
             DBSI(MemDB *tables, int tid,Rpc *rpc,TSManager *t,int c_id = 0) ;
             void ThreadLocalInit();
-  
+
             void _begin(DBLogger *db_logger,TXProfile *p );
             virtual void local_ro_begin();
             bool end(yield_func_t &yield);
@@ -51,7 +51,7 @@ namespace nocc  {
             /* local get*/
             uint64_t get(int tableid, uint64_t key, char** val,int len);
             uint64_t get_cached(int tableid,uint64_t key,char **val);
-  
+
             /* yield is used to cope with very rare read locked objects */
             uint64_t get_ro(int tableid,uint64_t key,char *val,yield_func_t &yield);
             uint64_t get_ro_versioned(int tableid,uint64_t key,char *val,uint64_t version,yield_func_t &yield);
@@ -62,11 +62,11 @@ namespace nocc  {
             /* Currently only support local insert */
             void insert(int tableid,uint64_t key,char *val,int len);
             void insert_index(int tableid,uint64_t key,char *val);
-    
+
             void delete_(int tableid,uint64_t key);
             void delete_index(int tableid,uint64_t key);
             void delete_by_node(int tableid, char *node);
-    
+
             int  add_to_remote_set(int tableid,uint64_t key,int pid);
             int  add_to_remote_set(int tableid,uint64_t *key,int klen,int pid);
 
@@ -96,7 +96,7 @@ namespace nocc  {
 
             WriteSet *rwset;
             bool localinit;
-  
+
             bool abort_;
             MemDB *txdb_ ;
             Rpc *rpc_handler_;
@@ -106,7 +106,7 @@ namespace nocc  {
                Though we can use lower bits :)
             */
             uint64_t thread_id;
-    
+
             TSManager *ts_manager_;
             std::vector<Qp *> qp_vec_;
 
@@ -118,6 +118,7 @@ namespace nocc  {
             }
         private:
             uint64_t _get_ro_versioned_helper(int tableid,uint64_t key,char *val,uint64_t version,yield_func_t &yield);
+            void commit_ts(uint64_t ts);
         };
 
         class SIIterator : public TXIterator {
@@ -128,38 +129,38 @@ namespace nocc  {
             ~SIIterator() {
                 delete iter_;
             }
-  
+
             // Returns true iff the iterator is positioned at a valid node.
             bool Valid();
-  
+
             // Returns the key at the current position.
             // REQUIRES: Valid()
             uint64_t Key();
-  
+
             char   * Value();
-  
+
             // Advances to the next position.
             // REQUIRES: Valid()
             void Next();
-  
+
             // Advances to the previous position.
             // REQUIRES: Valid()
             void Prev();
-  
+
             // Advance to the first entry with a key >= target
             void Seek(uint64_t key);
-  
-  
+
+
             // Position at the first entry in list.
             // Final state of iterator is Valid() iff list is not empty.
             void SeekToFirst();
-  
+
             // Position at the last entry in list.
             // Final state of iterator is Valid() iff list is not empty.
             void SeekToLast();
 
             char   * Node();
-  
+
         private:
             DBSI* tx_;
             //    MemstoreBPlusTree *table_;
@@ -171,7 +172,7 @@ namespace nocc  {
             static inline bool ValidateValue(uint64_t *value) {
                 return value != NULL;
             }
-  
+
         };
     }
 }

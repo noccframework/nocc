@@ -52,18 +52,6 @@ namespace nocc {
 
       /* maybe some sanity checks? */
       /* start the monitor */
-#if 0
-#ifndef SI_VEC
-      if(current_partition == master_id_)
-#endif
-        {
-          moniter = std::bind(&TSManager::ts_monitor,this,_1);
-          pthread_t tid;
-          pthread_create(&tid, NULL, pthread_call_wrapper, NULL);
-        }
-
-#endif
-
       this->total_partition = cm_->get_num_nodes();
       RThreadLocalInit();
 
@@ -121,7 +109,7 @@ namespace nocc {
       }
 
 
-      {
+      if(1) {
         poller = std::bind(&TSManager::timestamp_poller,this,_1);
         pthread_t tid;
         pthread_create(&tid,NULL,pthread_call_wrapper1,NULL);
@@ -192,74 +180,8 @@ namespace nocc {
 #endif
     }
 
-    void *TSManager::ts_monitor(void *arg) {
-      /*
-      //RDMAFunctionWrapper rw(rdma_handler_);
-      #ifdef SI_VEC
-      // timestamp vector version. i think it is bad
-      uint64_t current_ts = last_ts_;
-      RThreadLocalInit();
-      uint64_t *local_buffer  = (uint64_t *)Rmalloc(sizeof(uint64_t) * 64);
-      int cur_buf_slot = 0;
-
-      static char *ts_buffer = rdma_handler_->getBuffer();
-      //    assert(false);
-      while(true) {
-      // actually we will use a simple design, we will wait till the ts has advanced enough to commit the tx
-      asm volatile("" ::: "memory");
-      for(uint i = 0;i < nthreads;++i) {
-      assert(headers[i] >= tailers[i]);
-      if((headers[i] > tailers[i]) ) {
-      uint64_t *m_ptr = (uint64_t *)(msg_channels[i] + tailers[i] % MSG_CHANNEL_SZ);
-      if(*m_ptr != last_ts_ + 1) {
-      continue;
-      }
-      // gotten one
-      *m_ptr = 0;
-      asm volatile("" ::: "memory");
-      tailers[i] += sizeof(uint64_t);
-      last_ts_ += 1;
-      #if 0
-      *(uint64_t *)ts_buffer = last_ts_;
-      #else
-      #if 1
-      local_buffer[(cur_buf_slot) % 64] = last_ts_;
-      // casual write
-      rw.casualWrite(_QP_ENCODE_ID(master_id_,worker_id_), (char *)(&(local_buffer[(cur_buf_slot) % 64])),
-      ts_addr_ + current_partition * sizeof(uint64_t), sizeof(uint64_t));
-      cur_buf_slot += 1;
-      #else
-      *local_buffer = last_ts_;
-      rdma_handler_->write(_QP_ENCODE_ID(master_id_,worker_id_), (char *)local_buffer,
-      ts_addr_ + current_partition * sizeof(uint64_t),sizeof(uint64_t));
-      #endif
-      #endif
-      }
-      // end iterating thread local data
-      }
-      }
-      #else
-      // one timestamp version
-      // update it's local timestamp
-      assert(false);
-      #endif
-      */
-      return NULL;
-    }
-
     void TSManager::get_timestamp(char *buffer, int tid) {
-#if 0
-      /* first version, we will let each transaction to fetch timestamp from remote */
-#if 1
-      //RDMAQueues::Status ret = rdma_handler_->read(_QP_ENCODE_ID(master_id_,tid),buffer,ts_addr_,tv_size_);
-      //    assert(ret == RDMAQueues::IO_SUCC);
-#else
-      *((uint64_t *)buffer) = last_ts_;
-#endif
-
-#else
       memcpy(buffer,fetched_ts_buffer_,tv_size_);
-#endif
       return ;
     }
   };

@@ -108,7 +108,10 @@ namespace nocc  {
             // last committed timestamp of write transaction, for check
             //    uint64_t counter;
             uint64_t _getTxId();
-            uint64_t _get_ro_versioned_helper(int tableid,uint64_t key,char *val,uint64_t version,yield_func_t &yield);
+            uint64_t _get_ro_versioned_helper(int tableid,uint64_t key,char *val,uint64_t version,yield_func_t &yield); // use split read/write lock
+            uint64_t _get_ro_naive(int tableid,uint64_t key,char *val,uint64_t version,yield_func_t &yield);     // contend lock with writer
+            uint64_t _get_helper(MemNode *node, char *val,uint64_t version,int vlen);
+
             //int last_rpc_mark_[16];
 
             //char *last_lock_ptr_[16];

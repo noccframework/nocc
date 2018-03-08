@@ -77,8 +77,8 @@ namespace nocc {
           int flag = IBV_SEND_SIGNALED;
           if(size <= 64)
             flag |= IBV_SEND_INLINE;
-        //if(qp->first_send()) flag |= IBV_SEND_SIGNALED;
-        //if(qp->need_poll())  qp->poll_completion();
+          //if(qp->first_send()) flag |= IBV_SEND_SIGNALED;
+          //if(qp->need_poll())  qp->poll_completion();
           qp->rc_post_send(IBV_WR_RDMA_WRITE,local_buf,size,offset,
                            flag,
                            cor_id_);

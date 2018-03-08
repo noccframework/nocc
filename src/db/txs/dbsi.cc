@@ -267,6 +267,7 @@ namespace nocc {
             auto rdma_cm = tm->cm_;
             for(uint i = 0;i < rdma_cm->get_num_nodes();++i) {
                 auto qp = rdma_cm->get_rc_qp(thread_id,i,1); // use QP at idx 1
+                //auto qp = rdma_cm->get_rc_qp(0,i,1);
                 assert(qp != NULL);
                 qp_vec_.push_back(qp);
             }
@@ -538,11 +539,12 @@ namespace nocc {
                     }
 
                     void DBSI::ThreadLocalInit() {
+
                         if (false == localinit) {
                             rwset = new WriteSet();
                             remoteset = new RemoteSet(rpc_handler_,cor_id_,thread_id);
                             ts_buffer_ = (uint64_t *)(Rmalloc(sizeof(uint64_t ) * (ts_manager_->total_partition + 1)));
-                            //assert(ts_buffer_ != NULL);
+                            assert(ts_buffer_ != NULL);
                             localinit = true;
 
                         }
@@ -595,7 +597,6 @@ namespace nocc {
 
                         /* get commit ts */
                         commit_ts = ts_manager_->commit_ts();
-
 #ifdef SI_VEC
                         encoded_commit_ts = SI_ENCODE_TS(current_partition,commit_ts);
 #else
@@ -611,30 +612,7 @@ namespace nocc {
                         rwset->CommitLocalWrite(encoded_commit_ts);
                         remoteset->max_time_ = encoded_commit_ts;
                         remoteset->commit_remote();
-#if 1
-                        // update the commit timestamp
-                        while(ts_manager_->last_ts_ != commit_ts - 1) {
-                            asm volatile("" ::: "memory");
-                        }
-                        // this is the distributed SI case
-                        // an RDMA write is needed
-                        {
-                            // must be **synchronously** posted, otherwise a later one may be overwritten by other
-                            // threads
-                            *ts_buffer_ = commit_ts;
-                            Qp *qp = qp_vec_[0];
-                            auto send_flag = 0;
-                            auto ret = qp->rc_post_send(IBV_WR_RDMA_WRITE,(char *)ts_buffer_,sizeof(uint64_t),
-                                                        current_partition * sizeof(uint64_t),IBV_SEND_SIGNALED);
-                            assert(ret == Qp::IO_SUCC);
-
-                            qp->poll_completion(); // FIXME!! no error detection now
-                        }
-
-                        asm volatile("" ::: "memory");
-                        ts_manager_->last_ts_ += 1;
-#else
-#endif
+                        this->commit_ts(commit_ts); // commit the timestamp to the remote oracle
                         return true;
                     ABORT:
                         remoteset->release_remote();
@@ -645,6 +623,44 @@ namespace nocc {
                         }
 #endif
                         return false;
+                    }
+
+                    void DBSI::commit_ts(uint64_t ts) {
+                        // update the commit timestamp, using dedicated QP
+
+                        //                        while(ts_manager_->last_ts_ != ts - 1) {
+                        //asm volatile("" ::: "memory");
+                        //}
+                        // this is the distributed SI case
+                        // an RDMA write is needed
+                        {
+                            // must be **synchronously** posted, otherwise a later one may be overwritten by other
+                            // threads
+                            *ts_buffer_ = ts;
+                            Qp *qp = qp_vec_[ts_manager_->master_id_];
+#define OPT 0
+#if !OPT
+                            auto send_flag = 0;
+                            auto ret = qp->rc_post_send(IBV_WR_RDMA_WRITE,(char *)ts_buffer_,sizeof(uint64_t),
+                                                        current_partition * sizeof(uint64_t),IBV_SEND_SIGNALED);
+                            assert(ret == Qp::IO_SUCC);
+
+                            qp->poll_completion(); // FIXME!! no error detection now
+#else
+                            auto send_flag = 0;
+                            if(qp->first_send()) {
+                                send_flag |= IBV_SEND_SIGNALED;
+                            }
+                            if(qp->need_poll())
+                                qp->poll_completion();
+                            auto ret = qp->rc_post_send(IBV_WR_RDMA_WRITE,(char *)ts_buffer_,sizeof(uint64_t),
+                                                        current_partition * sizeof(uint64_t),send_flag);
+                            assert(ret == Qp::IO_SUCC);
+#endif
+                        }
+
+                        asm volatile("" ::: "memory");
+                        ts_manager_->last_ts_ += 1;
                     }
 
                     void DBSI::abort() {

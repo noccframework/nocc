@@ -152,7 +152,7 @@ def check_process_status(mac_set):
     failed_mac_set = {}
     for m in mac_set:
         print_with_tag("check","check running status %s" % m)
-        bcmd = "ps aux | grep nn"
+        bcmd = "ps aux | grep nocc"
         stdout, stderr = Popen(['ssh',"-o","ConnectTimeout=1",m, bcmd],
                                stdout=PIPE).communicate()
         if True:
@@ -446,7 +446,6 @@ def main():
         for e in exes:
             print("exe: %s" % e)
             for config in configs:
-                print("config: %s" % config)
                 for s in settings:
                     t,c,r = s
                     mac_set = parse_config(config)
@@ -459,14 +458,14 @@ def main():
                         lat  = results[log_file_name][3]
                         for i in xrange(len(lat)):
                             lat[i] = lat[i] / float(RETRY_COUNTS)
-                        print("%f %f %f %f %f" % (res,lat[0],lat[1],lat[2],rate))
+                        print("%f %f %f %f %f %s" % (res,lat[0],lat[1],lat[2],rate,config))
                     else:
                         # print the log file results
                         res = (calculate_results(log_dir + log_file_name))
                         thr = res[0]
                         lat = res[3]
                         print("%d %d %d -> %f, lat %f" % (len(mac_set),t,c,thr,lat))
-                print("") ## break line
+                #print("") ## break line
             print("") ## break line
 
     f.close() ## close the log file

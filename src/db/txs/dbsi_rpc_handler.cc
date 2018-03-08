@@ -9,6 +9,7 @@ extern size_t total_partition;
 #define MAX(x,y) (((x) > (y))? (x):(y))
 
 using namespace nocc::db;
+using namespace nocc::util;
 
 void
 DBSI::get_rpc_handler2(int id,int cid,char *msg,void *arg) {
@@ -564,7 +565,8 @@ void DBSI::commit_rpc_handler2(int id,int cid,char *msg,void *arg) {
     }
     header->node->old_value = cur;
     header->node->value = (uint64_t *)new_val;
-    assert(header->node->seq < desired_seq);
+    ASSERT_PRINT(header->node->seq < desired_seq,stderr,
+                 "header %lu, desired %lu",header->node->seq,desired_seq);
     asm volatile("" ::: "memory");
     header->node->seq = desired_seq;
     asm volatile("" ::: "memory");

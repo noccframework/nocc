@@ -10,7 +10,7 @@
 #define QP_NUMS 5
 
 // logger related configuration
-#define USE_LOGGER 1
+#define USE_LOGGER 0
 #define LOGGER_USE_RPC 2
 #define USE_BACKUP_STORE 1
 #define USE_BACKUP_BENCH_WORKER 0
@@ -25,8 +25,8 @@
 #define PROFILE_SERVER_NUM 0 // whether profile number of server accessed per TX
 
 // other stuffs
-#define ONE_SIDED     1
-#define CACHING       1
+#define ONE_SIDED     0
+#define CACHING       0
 
 // end of global configuration
 #endif

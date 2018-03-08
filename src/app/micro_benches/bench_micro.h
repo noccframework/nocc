@@ -20,7 +20,7 @@ namespace nocc {
 
 		namespace micro {
 #define TAB 0       // dummy table used in microbenchmarks
-#define K_NUM 10000 // number of dummy records per thread
+#define K_NUM 100000 // number of dummy records per thread
 
 			enum RPC_TYPE {
 				RPC_NOP = 1,
@@ -145,8 +145,10 @@ namespace nocc {
 				txn_result_t micro_rdma_atomic_multi(yield_func_t &yield);
 
 				// TX related tests
-				txn_result_t micro_tx_ts(yield_func_t &yield);
-				txn_result_t micro_tx_rad(yield_func_t &yield);
+				txn_result_t micro_tx_ts(yield_func_t &yield);  // Test the scalability of timestamp
+				txn_result_t micro_tx_rad(yield_func_t &yield); // Test RAD's yield RPC's performance overhead
+				txn_result_t micro_tx_rw(yield_func_t &yield);  // Test the optimization of split read/write timestamp
+
 
 				/* comment ***************************************************/
 
