@@ -368,7 +368,7 @@ extern size_t total_partition;
                 volatile uint64_t *lockptr = &(node->lock); // share the lock with writer
                 if(tentative_timestamp == version) {
               read_retry:
-                  if(*lockptr != 0 |
+                  if(*lockptr != 0 ||
                      !__sync_bool_compare_and_swap(lockptr,0,
                                                    73)) {
                     worker->yield_next(yield);

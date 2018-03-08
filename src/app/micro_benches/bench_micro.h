@@ -52,7 +52,8 @@ namespace nocc {
 				MICRO_RDMA_ATOMIC_MULTI = 17,
 				// TX related microbenchmarks
 				MICRO_TS_STRSS = 18,
-				MICRO_TX_RAD
+				MICRO_TX_RAD,
+				MICRO_TX_RW
 			};
 
 			// main test function
@@ -269,6 +270,11 @@ namespace nocc {
 
 				static txn_result_t MicroTXRad(BenchWorker *w,yield_func_t &yield) {
 					txn_result_t r = static_cast<MicroWorker *>(w)->micro_tx_rad(yield);
+					return r;
+				}
+
+				static txn_result_t MicroTXRW(BenchWorker *w,yield_func_t &yield) {
+					txn_result_t r = static_cast<MicroWorker *>(w)->micro_tx_rw(yield);
 					return r;
 				}
 

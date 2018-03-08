@@ -370,6 +370,7 @@ namespace nocc {
       reply_buf_size_ = (ptr - reply_buf_);
 
       // clear the server set for further writes
+      request_buf_end_ = request_buf_;
       server_set_.clear();
       return true;
     }

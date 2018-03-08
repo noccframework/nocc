@@ -116,7 +116,7 @@ namespace nocc {
 				}
 
 				virtual void init_put() {
-					if(micro_type != MICRO_TX_RAD) return; // only test PDI for loading
+					if(micro_type != MICRO_TX_RAD || micro_type != MICRO_TX_RW) return; // only test PDI for loading
 
 					assert(store_ != NULL);
 					int meta_size = META_SIZE;
@@ -224,6 +224,7 @@ namespace nocc {
 				}
 				case MICRO_TS_STRSS:
 				case MICRO_TX_RAD:
+				case MICRO_TX_RW:
 					{
 					// init tx data structures
 					for(uint i = 1;i < coroutine_num + 1;++i) {
@@ -305,6 +306,7 @@ namespace nocc {
 																this,_1,_2,_3,_4),RPC_READ); // for test only!
 					break;
 				case MICRO_TX_RAD:
+				case MICRO_TX_RW:
 					RoutineMeta::register_callback(boost::bind(&MicroWorker::tx_one_shot_handler,this,_1,_2,_3,_4),RPC_READ);
 					rpc_handler_->register_callback(boost::bind(&MicroWorker::tx_one_shot_handler2,
                                                                 this,_1,_2,_3,_4),RPC_READ);
@@ -426,6 +428,10 @@ namespace nocc {
 					name = "TX rad stress"; fn = MicroTXRad;
 					break;
 				}
+				case MICRO_TX_RW: {
+					name = "TX read read/write"; fn = MicroTXRW;
+				}
+					break;
 				default:
 					assert(false);
 				}
