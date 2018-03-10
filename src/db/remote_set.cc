@@ -23,6 +23,8 @@ extern __thread MappedLog local_log;
 
 extern size_t current_partition;
 
+using namespace nocc::util;
+
 namespace nocc {
 
   extern __thread oltp::BenchWorker* worker;
@@ -80,10 +82,6 @@ namespace nocc {
 
     int  RemoteSet::do_reads(int tx_id) {
 
-      assert(request_buf_ != NULL);
-      //    assert(rpc_handler_->msg_buf_ + sizeof(struct rpc_header) + sizeof(uint64_t) == request_buf_);
-      //assert( ((RequestHeader *)request_buf_)->padding = 73);
-      //    fprintf(stdout,"do reads %d\n",read_server_num_);
       if(unlikely(elems_ >= std::numeric_limits<uint16_t>::max())) {
         fprintf(stdout,"overflow of items %d\n",elems_);
         sleep(1);
@@ -91,8 +89,6 @@ namespace nocc {
       }
       assert(read_server_num_ > 0);
       rpc_handler_->set_msg((char *)request_buf_);
-      //((RequestHeader *)request_buf_)->tx_id = 73;
-      //((RequestHeader *)request_buf_)->padding = ++count_;
       ((RequestHeader *)request_buf_)->cor_id = cor_id_;
       ((RequestHeader *)request_buf_)->num = elems_;
 
@@ -135,10 +131,7 @@ namespace nocc {
     bool RemoteSet::lock_remote(yield_func_t &yield) {
 
       if(write_items_ > 0) {
-
-        assert(write_items_ <= elems_);
         RequestHeader *reqh = (RequestHeader *)lock_request_buf_;
-
         reqh->num = write_items_;
         reqh->cor_id  = cor_id_;
         rpc_handler_->set_msg((char *)lock_request_buf_);
@@ -188,11 +181,6 @@ namespace nocc {
         rpc_handler_->send_reqs(RPC_RELEASE, lock_request_buf_end_ - lock_request_buf_,
                                 write_servers_,write_server_num_,cor_id_);
 
-#if RAD_LOG
-        char *log_buf = next_log_entry(&local_log,64);
-        assert(log_buf != NULL);
-        sprintf(log_buf,"release %d,%d, using %p %lu\n",tid_,cor_id_,lock_request_buf_,count_);
-#endif
         this->update_write_buf();
       }
     }
@@ -305,6 +293,7 @@ namespace nocc {
     }
 
     bool RemoteSet::get_result_imm(int idx,char **ptr,int size) {
+
       // ReplyItem records the sequence and the MemNode
       ReplyItem *header = (ReplyItem *)reply_buf_end_;
 
@@ -353,11 +342,11 @@ namespace nocc {
         ReplyHeader *r_header = (ReplyHeader *)ptr;
         int num_entries = r_header->num_items_;
         ptr += sizeof(ReplyHeader);
-
+        ASSERT_PRINT(num_entries == 1,stderr,"num %d\n",num_entries);
         for(uint j = 0;j < num_entries;++j) {
 
           RemoteSetReplyItem *pr = (RemoteSetReplyItem *)ptr;
-          kvs_[pr->idx].val = ptr + sizeof(RemoteSetReplyItem);
+          kvs_[pr->idx].val = (ptr + sizeof(RemoteSetReplyItem));
           kvs_[pr->idx].seq = pr->seq;
 #if 1
           kvs_[pr->idx].node = pr->node;
@@ -365,20 +354,23 @@ namespace nocc {
           requests[pr->idx].node = pr->node;
           requests[pr->idx].seq  = pr->seq;
           ptr += (sizeof(RemoteSetReplyItem) + pr->payload);
+          assert(pr->payload == CACHE_LINE_SZ);
         }
       }
       reply_buf_size_ = (ptr - reply_buf_);
 
       // clear the server set for further writes
-      request_buf_end_ = request_buf_;
+#if 1
+      elems_ = 0;
+      read_server_num_ = 0;
       server_set_.clear();
+#endif
       return true;
     }
 
     void RemoteSet::do_reads(yield_func_t &yield) {
       assert(false);// this call shall never be used
       int num_replies = do_reads();
-      // yield(routines_[next_coro_id_arr_[this->cor_id_]]);
       worker->indirect_yield(yield);
       get_results(num_replies);
     }
@@ -386,7 +378,6 @@ namespace nocc {
     void
     RemoteSet::promote_to_write(int id, char *val, int len) {
 
-      assert(id < elems_);
       write_items_ += 1;
       read_items_  -= 1;
       assert(read_items_ >= 0);
@@ -406,23 +397,15 @@ namespace nocc {
       p1->node    = kvs_[id].node;
       p1->pid     = kvs_[id].pid;
 
-#if RAD_LOG
-      //      char *log_buf = next_log_entry(&local_log,48);
-      //assert(log_buf != NULL);
-      //sprintf(log_buf,"promote %d %p\n",id,p1->node);
-#endif
-
       if(len != 0) {
         memcpy((char *)p1 + sizeof(RemoteWriteItem), val, len);
       }
       write_back_request_buf_end_ += (sizeof(RemoteWriteItem) + len);
 #endif
-      if(server_set_.find(kvs_[id].pid) == server_set_.end()) {
-
-        server_set_.insert(kvs_[id].pid);
+      if(write_server_set_.find(kvs_[id].pid) == write_server_set_.end()) {
+        write_server_set_.insert(kvs_[id].pid);
         write_servers_[write_server_num_++] = kvs_[id].pid;
       }
-
     }
 
     void RemoteSet::write(int8_t tableid,uint64_t key,char *val,int len) {
@@ -457,25 +440,18 @@ namespace nocc {
 
 
     void RemoteSet::update_read_buf() {
-
       request_buf_ = msg_buf_alloctors[cor_id_].get_req_buf() + sizeof(uint64_t) + sizeof(rpc_header);
       request_buf_end_ = request_buf_ + sizeof(RequestHeader);
     }
 
     void RemoteSet::clear_for_reads() {
 
-      //if(read_items_ > 0 || write_items_ > 0) {
       if(read_server_num_ > 0 || write_server_num_ > 0) {
-
         update_read_buf();
-
-        // reset the request buffer's header
-        ((RequestHeader *)request_buf_)->num = 0;
-        ((RequestHeader *)request_buf_)->padding = 73 + cor_id_; /* as a checksum */
-        ((RequestHeader *)request_buf_)->cor_id  = cor_id_;
-
         read_items_ = 0;
       }
+      //fprintf(stdout,"read write %d %d\n",read_server_num_,write_server_num_);
+      //sleep(1);
     }
 
     void RemoteSet::update_write_buf() {
@@ -485,7 +461,6 @@ namespace nocc {
 
       write_back_request_buf_ = msg_buf_alloctors[cor_id_].get_req_buf() + sizeof(uint64_t) + sizeof(rpc_header);
       write_back_request_buf_end_ = write_back_request_buf_ + sizeof(RequestHeader);
-
     }
 
     void RemoteSet::clear(int meta_len) {
@@ -504,6 +479,7 @@ namespace nocc {
       need_validate_ = false; // reset validation status
 
       server_set_.clear();
+      write_server_set_.clear();
     }
 
     void RemoteSet::set_lockpayload(uint64_t payload)  {
@@ -604,7 +580,6 @@ namespace nocc {
     }
 
     int  RemoteSet::add(REQ_TYPE type,int pid,int8_t tableid,uint64_t *key,int klen) {
-
       assert(elems_ + 1 <= max_length_);
       assert(type !=  REQ_READ_LOCK);
       assert(pid != current_partition);

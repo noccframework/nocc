@@ -141,6 +141,7 @@ namespace nocc {
     private:
       void print_write_server_list();
       std::set<int> server_set_;
+      std::set<int> write_server_set_;
       int read_servers_[MAX_SERVER_TO_SENT];
       int read_server_num_;
       int write_servers_[MAX_SERVER_TO_SENT];

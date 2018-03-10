@@ -116,7 +116,7 @@ namespace nocc {
 				}
 
 				virtual void init_put() {
-					if(micro_type != MICRO_TX_RAD || micro_type != MICRO_TX_RW) return; // only test PDI for loading
+					if(micro_type != MICRO_TX_RAD && micro_type != MICRO_TX_RW) return; // only test PDI for loading
 
 					assert(store_ != NULL);
 					int meta_size = META_SIZE;
@@ -127,7 +127,8 @@ namespace nocc {
 						uint64_t pid = AcctToPid(i);
 						assert(0 <= pid && pid < total_partition);
 						if(pid != current_partition) continue;
-						char *wrapper_acct = new char[meta_size + sizeof(account::value)];
+						char *wrapper_acct = new char[meta_size + CACHE_LINE_SZ];
+						assert(wrapper_acct != NULL);
 						memset(wrapper_acct,0,meta_size);
 						store_->Put(TAB,i,(uint64_t *)wrapper_acct);
 					}
@@ -227,7 +228,7 @@ namespace nocc {
 				case MICRO_TX_RW:
 					{
 					// init tx data structures
-					for(uint i = 1;i < coroutine_num + 1;++i) {
+					for(uint i = 0;i < coroutine_num + 1;++i) {
 #ifdef RAD_TX
 						txs_[i] = new DBRad(store_,worker_id_,rpc_handler_,i);
 #elif defined(OCC_TX)
@@ -306,10 +307,12 @@ namespace nocc {
 																this,_1,_2,_3,_4),RPC_READ); // for test only!
 					break;
 				case MICRO_TX_RAD:
-				case MICRO_TX_RW:
 					RoutineMeta::register_callback(boost::bind(&MicroWorker::tx_one_shot_handler,this,_1,_2,_3,_4),RPC_READ);
 					rpc_handler_->register_callback(boost::bind(&MicroWorker::tx_one_shot_handler2,
                                                                 this,_1,_2,_3,_4),RPC_READ);
+					break;
+				case MICRO_TX_RW:
+					RoutineMeta::register_callback(boost::bind(&MicroWorker::tx_one_shot_handler,this,_1,_2,_3,_4),RPC_READ);
 					break;
 				default:
 					// pass
@@ -429,7 +432,7 @@ namespace nocc {
 					break;
 				}
 				case MICRO_TX_RW: {
-					name = "TX read read/write"; fn = MicroTXRW;
+					name = "TX read/write"; fn = MicroTXRW;
 				}
 					break;
 				default:
@@ -441,7 +444,6 @@ namespace nocc {
 
 			std::vector<BenchWorker *> MicroMainRunner::make_workers() {
 				fast_random r(23984543 + current_partition);
-
 				std::vector<BenchWorker *> ret;
 				for(uint i = 0;i < nthreads; ++i) {
 					ret.push_back(new MicroWorker(i,r.next(),micro_type,store_,ops_per_worker,

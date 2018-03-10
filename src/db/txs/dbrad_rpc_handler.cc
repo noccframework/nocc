@@ -14,6 +14,7 @@ extern size_t total_partition;
 extern __thread MappedLog local_log;
 
 using namespace nocc::db;
+using namespace nocc::util;
 
 void DBRad::fast_get_rpc_handler(int id, int cid, char *msg, void *arg) {
 
@@ -160,7 +161,6 @@ void DBRad::fast_get_rpc_handler(int id, int cid, char *msg, void *arg) {
 }
 
 void DBRad::fast_validate_rpc_handler(int id, int cid, char *msg, void *arg) {
-
   RemoteSet::RequestHeader *header = (RemoteSet::RequestHeader *)msg;
 
   char *reply_msg = rpc_handler_->get_reply_buf();
@@ -197,14 +197,6 @@ void DBRad::fast_validate_rpc_handler(int id, int cid, char *msg, void *arg) {
 
 void //__attribute__((optimize("O0")))
 DBRad::get_rpc_handler(int id,int cid,char *msg,void *arg) {
-
-#if RAD_LOG
-  char *log_buf = next_log_entry(&local_log,10);
-  assert(log_buf != NULL);
-  sprintf(log_buf,"get start\n");
-#endif
-
-
   /* no suprises, get rpc handler is exactly the same as OCC's rpc handler  */
   RemoteSet::RequestHeader *header = (RemoteSet::RequestHeader *)msg;
   assert(header->cor_id == cid);
@@ -215,34 +207,27 @@ DBRad::get_rpc_handler(int id,int cid,char *msg,void *arg) {
   int num_item_fetched(0);
 
   /* init traverse */
-#if 1
   char *traverse_ptr = msg + sizeof(RemoteSet::RequestHeader);
-#else
-  /* for test message num */
-  char *traverse_ptr = msg + sizeof(RemoteSet::RequestHeader) + sizeof(uint64_t) * total_partition;
-#endif
   int num_items = header->num;
-  //assert(num_items <= 4);
-  assert(num_items > 0);
-  //  fprintf(stdout,"rad num items %d\n",num_items);
   struct RemoteSet::ReplyHeader *r_header = (struct RemoteSet::ReplyHeader *)reply_msg;
 
   for(uint i = 0;i < num_items;++i) {
-  //for(uint i = 0;false;) {
     RemoteSet::RemoteSetRequestItem *header = (RemoteSet::RemoteSetRequestItem *)traverse_ptr;
     traverse_ptr += sizeof(RemoteSet::RemoteSetRequestItem);
     if(header->pid != current_partition) {
+      ASSERT_PRINT(false,stderr,"pid %d, %d, num %d\n",header->pid,i,num_items);
       continue;
     }
+    //fprintf(stdout,"fetch %lu\n",(uint64_t)(header->key.short_key));
     /* Fetching objects */
     switch(header->type) {
     case REQ_READ: {
       RemoteSet::RemoteSetReplyItem *reply_item = (RemoteSet::RemoteSetReplyItem *) reply_msg_t;
       int vlen = txdb_->_schemas[header->tableid].vlen;
+      //assert(vlen == CACHE_LINE_SZ);
       reply_item->payload = vlen;
       uint64_t seq(0);
       MemNode *node;
-
       if(txdb_->_schemas[header->tableid].klen == sizeof(uint64_t)) {
         // normal fetch
 #if LONG_KEY == 1
@@ -251,6 +236,7 @@ DBRad::get_rpc_handler(int id,int cid,char *msg,void *arg) {
         node = txdb_->stores_[header->tableid]->GetWithInsert((uint64_t)(header->key));
 #endif
       } else {
+        assert(false);
 #if LONG_KEY == 1
         node = txdb_->stores_[header->tableid]->GetWithInsert( (uint64_t )( &(header->key.long_key)));
 #else
@@ -258,7 +244,6 @@ DBRad::get_rpc_handler(int id,int cid,char *msg,void *arg) {
 #endif
       }
 
-      //fprintf(stdout,"reply %p to key %lu\n",node,header->key.short_key);
       assert(node != NULL);
       retry:
       asm volatile("" ::: "memory");
@@ -374,7 +359,6 @@ DBRad::lock_rpc_handler(int id,int cid, char *msg,void *arg) {
   sprintf(log_buf,"lock start\n");
 #endif
 
-
   // unlike lock rpc handler in OCC, dbrad needs further check versions
   RemoteSet::RequestHeader *header = (RemoteSet::RequestHeader *)msg;
 
@@ -396,6 +380,7 @@ DBRad::lock_rpc_handler(int id,int cid, char *msg,void *arg) {
       continue;
     }
 #if 1
+
     MemNode *node = lheader->node;
     volatile uint64_t *lockptr = &(node->lock);
 
@@ -435,7 +420,6 @@ DBRad::lock_rpc_handler(int id,int cid, char *msg,void *arg) {
         sprintf(log_buf,"lock ptr %p, @%d,%d,%d succeed\n",lheader->node,id,thread_id,cid);
     }
 #endif
-    //assert(lheader->node->lock == ENCODE_LOCK_CONTENT(id,thread_id,cid + 1));
 #if 0
     // record the previous lock history
     if(lock_check_status[cid].find((uint64_t)lockptr) == lock_check_status[cid].end()) {
@@ -455,8 +439,6 @@ DBRad::lock_rpc_handler(int id,int cid, char *msg,void *arg) {
     /* end iterating request items */
   }
   /* re-use payload field to set the max time */
-  assert(num_items > 0);
-  //  ((RemoteSet::ReplyHeader *) reply_msg)->num_items_ = num_items;
   ((RemoteSet::ReplyHeader *)(reply_msg))->payload_ = max_time;
   rpc_handler_->send_reply(sizeof(RemoteSet::ReplyHeader),id,cid);
 
@@ -473,7 +455,6 @@ DBRad::lock_rpc_handler(int id,int cid, char *msg,void *arg) {
 
 void
 DBRad::release_rpc_handler(int id,int cid,char *msg,void *arg) {
-
 #if RAD_LOG
   char *log_buf = next_log_entry(&local_log,64);
   assert(log_buf != NULL);
@@ -513,36 +494,23 @@ DBRad::release_rpc_handler(int id,int cid,char *msg,void *arg) {
 
 void //__attribute__((optimize("O0")))
 DBRad::commit_rpc_handler2(int id,int cid,char *msg,void *arg) {
-
   RemoteSet::RequestHeader *r_header = (RemoteSet::RequestHeader *)msg;
 
   int num_items = r_header->num;
-  //int num_items = r_header->tx_id;
   uint64_t desired_seq = r_header->padding;
 
   char *traverse_ptr = msg + sizeof(RemoteSet::RequestHeader);
   assert(num_items > 0);
 
   for(uint i = 0;i < num_items;++i) {
-  //for(uint i = 0;false; ) {
 
     RemoteSet::RemoteWriteItem *header = (RemoteSet::RemoteWriteItem *)traverse_ptr;
     traverse_ptr += sizeof(RemoteSet::RemoteWriteItem);
 
     if(header->pid != current_partition ) {
-      //fprintf(stdout,"git pid %d\n",header->pid);
-      //assert(false);
       traverse_ptr += header->payload;
       continue;
     }
-#if 0
-    MemNode *node = txdb_->stores_[header->tableid]->GetWithInsert((uint64_t)(header->key));
-    if(node != header->node) {
-      fprintf(stdout,"fetched node %p, real %p for key %lu\n",header->node,node,header->key);
-      assert(false);
-    }
-#endif
-
     char *new_val;
     if(header->payload == 0) {
       new_val = NULL;
@@ -579,13 +547,7 @@ DBRad::commit_rpc_handler2(int id,int cid,char *msg,void *arg) {
     /* release the lock */
     header->node->lock = 0;
     asm volatile("" ::: "memory");
-    //assert(header->node->lock != ENCODE_LOCK_CONTENT(id,thread_id,cid + 1));
-    //last_lock_ptr_[cid] = (char *) (&(header->node->lock));
-
-    //assert(lock_check_status[cid].find((uint64_t)last_lock_ptr_[cid]) != lock_check_status[cid].end());
-    //lock_check_status[cid][(uint64_t)last_lock_ptr_[cid]] = true;
 #if RAD_LOG
-    //    fprintf(stdout,"try release %p at %d\n",header->node,thread_id);
     char *log_buf = next_log_entry(&local_log,64);
     assert(log_buf != NULL);
     sprintf(log_buf,"commit release node %p,%d,%d,%d\n",header->node,id,thread_id,cid);

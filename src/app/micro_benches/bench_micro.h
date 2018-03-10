@@ -19,7 +19,7 @@ namespace nocc {
 	namespace oltp {
 
 		namespace micro {
-#define TAB 0       // dummy table used in microbenchmarks
+#define TAB 1       // dummy table used in microbenchmarks
 #define K_NUM 100000 // number of dummy records per thread
 
 			enum RPC_TYPE {

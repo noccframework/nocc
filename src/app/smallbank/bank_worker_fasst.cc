@@ -42,6 +42,7 @@ namespace nocc {
       txn_result_t BankWorker::txn_deposit_checking_fasst(yield_func_t &yield) {
 
         tx_->begin(db_logger_);
+
         float amount = 1.3;
       retry:
         uint64_t id;
@@ -70,15 +71,6 @@ namespace nocc {
         cv->c_balance += 1;
         tx_->remote_write(0,(char *)cv,sizeof(checking::value));
 
-#if 0   // { return after the execuation phase
-#ifndef FARM
-        tx_->remoteset->update_read_buf();
-        // even no commit phase, we need to update the commit buffer.
-        // this is because we use remote_write to update values
-        tx_->remoteset->update_write_buf();
-#endif
-        return txn_result_t(true,1);
-#endif //  }
 
 #if FASST == 1
         if(unlikely(res == false)) {

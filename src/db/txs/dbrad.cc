@@ -319,7 +319,6 @@ extern size_t total_partition;
               {
                 /* register rpc handlers */
                 using namespace std::placeholders;
-
                 if(rpc != NULL) {
 
 #if 0
@@ -343,7 +342,7 @@ extern size_t total_partition;
                     rpc_handler_->register_callback(std::bind(&DBRad::lock_rpc_handler,this,_1,_2,_3,_4),RPC_LOCK);
                     rpc_handler_->register_callback(std::bind(&DBRad::release_rpc_handler,this,_1,_2,_3,_4),RPC_RELEASE);
                     rpc_handler_->register_callback(std::bind(&DBRad::commit_rpc_handler2,this,_1,_2,_3,_4),RPC_COMMIT);
-                     asm volatile("" ::: "memory");
+                    asm volatile("" ::: "memory");
                     rpc_registered = true;
                   }
                   mtx.unlock();
@@ -498,7 +497,6 @@ retry:
               }
 
               uint64_t DBRad::get_cached(int idx,char **val) {
-                assert(idx < remoteset->elems_);
                 *val = (char *)(remoteset->kvs_[idx].val);
                 return remoteset->kvs_[idx].seq;
               }
@@ -830,8 +828,8 @@ retry:
                 remoteset->commit_remote();
                 return true;
               ABORT:
-                //assert(false);
                 remoteset->release_remote();
+                remoteset->clear_for_reads();
 #if USE_LOGGER
                 if(db_logger_){
                   db_logger_->log_abort(cor_id_);
@@ -885,18 +883,17 @@ retry:
                 rwset->CommitLocalWrite(timestamp);
                 remoteset->max_time_ = timestamp;
                 remoteset->commit_remote();
-                //rwset->GC();
+                remoteset->clear_for_reads();
                 return true;
               ABORT:
                 remoteset->release_remote();
+                remoteset->clear_for_reads();
                 rwset->ReleaseAllSet();
 #if USE_LOGGER
                 if(db_logger_){
                   db_logger_->log_abort(cor_id_);
                 }
 #endif
-                //rwset->GC();
-                //profile->abortTotal += 1;
                 return false;
               }
 
@@ -1056,7 +1053,7 @@ retry:
                   RemoteSet::RemoteSetItem& item = remoteset->kvs_[r_id];
                   char* logger_val = db_logger_->get_log_entry(cor_id_, item.tableid, item.key, len, item.pid);
                   memcpy(logger_val, val, len);
-                  db_logger_->close_entry(cor_id_); 
+                  db_logger_->close_entry(cor_id_);
                 }
 #endif
                 remoteset->promote_to_write(r_id,val,len);
@@ -1072,7 +1069,7 @@ retry:
 
               void DBRad::get_remote_results(int num_results) {
                 remoteset->get_results(num_results);
-                remoteset->clear_for_reads();
+                //remoteset->clear_for_reads();
               }
             }
 

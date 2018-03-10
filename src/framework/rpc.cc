@@ -283,8 +283,7 @@ namespace nocc {
     int //__attribute__((optimize("O0")))
     Rpc::send_reqs(int rpc_id,int size, char *reply_buf,int *server_ids,int num,
                      int cid,int type) {
-      //assert(reply_counts_[cid] == 0);
-      //assert(reply_bufs_[cid] == NULL);
+      assert(reply_counts_[cid] == 0);
       reply_counts_[cid] = num;
       reply_bufs_[cid]   = reply_buf;
 
@@ -311,7 +310,6 @@ namespace nocc {
 
       nrpc_polled_ += 1;
       struct rpc_header *header = (struct rpc_header *) msg;
-      //fprintf(stdout,"receive req from %d,type %d @%d\n",from,header->meta.type,thread_id_);
 
       if(header->meta.type == REQ) {
         // normal rpcs
