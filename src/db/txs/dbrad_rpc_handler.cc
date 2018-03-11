@@ -215,7 +215,6 @@ DBRad::get_rpc_handler(int id,int cid,char *msg,void *arg) {
     RemoteSet::RemoteSetRequestItem *header = (RemoteSet::RemoteSetRequestItem *)traverse_ptr;
     traverse_ptr += sizeof(RemoteSet::RemoteSetRequestItem);
     if(header->pid != current_partition) {
-      ASSERT_PRINT(false,stderr,"pid %d, %d, num %d\n",header->pid,i,num_items);
       continue;
     }
     //fprintf(stdout,"fetch %lu\n",(uint64_t)(header->key.short_key));
