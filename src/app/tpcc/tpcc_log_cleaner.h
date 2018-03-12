@@ -60,7 +60,7 @@ namespace nocc {
             return 0;
           default:
             // if(table_id >= 0 && table_id <= 10)return 0;
-            fprintf(stdout,"recv tab %d key %lu seq %lu\n",table_id,key,seq);
+            //fprintf(stdout,"recv tab %d key %lu seq %lu\n",table_id,key,seq);
             assert(false);
           }
 
