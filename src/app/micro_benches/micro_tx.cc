@@ -34,8 +34,12 @@ namespace nocc {
         rpc_handler_->send_reply(CACHE_LINE_SZ,id,cid);
         return;
       }
+
+      // This RPC is designed to yield out
       void MicroWorker::tx_one_shot_handler(yield_func_t &yield,int id,int cid,char *input) {
         char *reply_msg = rpc_handler_->get_reply_buf();
+
+        uint64_t remote_id = *((uint64_t *)input);
         rpc_handler_->send_reply(CACHE_LINE_SZ,id,cid);
         return;
       }
@@ -116,10 +120,12 @@ namespace nocc {
             rpc_handler_->append_req(req_buf,RPC_READ,sizeof(uint64_t),pid,cor_id_,1);
             indirect_yield(yield);
           } else {
+            //fprintf(stdout,"add to %d, key %lu\n",pid,id);
             idx = tx_->add_to_remote_set(TAB,id,pid);
             assert(idx == 0);
-            auto replies = tx_->do_remote_reads();
+            auto replies = tx_->remoteset->do_reads(i);
             indirect_yield(yield);
+            //fprintf(stdout,"done\n");
             tx_->get_remote_results(replies);
 
             char *buf = NULL;

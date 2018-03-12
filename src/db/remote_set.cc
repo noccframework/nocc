@@ -364,6 +364,7 @@ namespace nocc {
       elems_ = 0;
       read_server_num_ = 0;
       server_set_.clear();
+      request_buf_end_ = request_buf_ + sizeof(RequestHeader);
 #endif
       return true;
     }
@@ -617,6 +618,7 @@ namespace nocc {
     RemoteSet::add(REQ_TYPE type,int pid,int8_t tableid,uint64_t key) {
 
       assert(elems_ + 1 <= max_length_);
+      assert(elems_ == 0);
       int cur = elems_;
       elems_++;
       kvs_[cur].pid = pid;

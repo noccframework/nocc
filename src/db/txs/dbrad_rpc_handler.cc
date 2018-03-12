@@ -209,15 +209,17 @@ DBRad::get_rpc_handler(int id,int cid,char *msg,void *arg) {
   /* init traverse */
   char *traverse_ptr = msg + sizeof(RemoteSet::RequestHeader);
   int num_items = header->num;
+
   struct RemoteSet::ReplyHeader *r_header = (struct RemoteSet::ReplyHeader *)reply_msg;
 
   for(uint i = 0;i < num_items;++i) {
     RemoteSet::RemoteSetRequestItem *header = (RemoteSet::RemoteSetRequestItem *)traverse_ptr;
     traverse_ptr += sizeof(RemoteSet::RemoteSetRequestItem);
     if(header->pid != current_partition) {
+      ASSERT_PRINT(false,stderr,"me %d, it %d, total %d,%d, key %lu\n",current_partition,header->pid,num_items,i,
+                   (uint64_t)(header->key.short_key));
       continue;
     }
-    //fprintf(stdout,"fetch %lu\n",(uint64_t)(header->key.short_key));
     /* Fetching objects */
     switch(header->type) {
     case REQ_READ: {

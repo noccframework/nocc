@@ -246,7 +246,6 @@ namespace nocc {
       assert(num > 0); // the request server shall be > 0
       auto ret = message_handler_->broadcast_to(server_lists,num,(char *)msg_buf_ + sizeof(uint64_t),
                                                 size + sizeof(rpc_header));
-      //auto ret = message_handler_->send_to(server_lists[0],(char *)msg_buf_ + sizeof(uint64_t),size + sizeof(rpc_header));
       assert(ret == Qp::IO_SUCC);
 #endif
 
