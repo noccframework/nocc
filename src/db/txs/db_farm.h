@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "all.h"
-#include "config.h"
 
 #include "tx_handler.h"
 

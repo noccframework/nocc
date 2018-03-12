@@ -1,6 +1,7 @@
 #include "dbtx.h"
 #include "all.h"
-#include "config.h"
+#include "db/config.h"
+#include "global_config.h"
 
 #include "app/config.h"
 #include "framework/framework.h"

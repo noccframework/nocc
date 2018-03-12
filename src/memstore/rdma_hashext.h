@@ -10,7 +10,7 @@
 #include "rdmaio.h" // for qp operation
 #include "ralloc.h" // for Rmalloc
 
-#include "sparsehash/dense_hash_map"
+//#include "sparsehash/dense_hash_map"
 
 
 #include <stdlib.h>
@@ -28,7 +28,7 @@
 #define CLUSTER_H    8
 
 using namespace rdmaio;
-using google::dense_hash_map;      // namespace where class lives by default
+//using google::dense_hash_map;      // namespace where class lives by default
 
 
 
