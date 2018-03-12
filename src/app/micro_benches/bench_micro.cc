@@ -242,7 +242,6 @@ namespace nocc {
 #endif
 					} // end init tx handlers for coroutines
 					tx_ = txs_[cor_id_];
-
 					// connecting QPs
 					for(uint i = 0;i < cm_->get_num_nodes();++i) {
 						Qp *qp = cm_->get_rc_qp(worker_id_,i,1);

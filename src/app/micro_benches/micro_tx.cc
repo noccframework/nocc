@@ -28,6 +28,13 @@ namespace nocc {
 
     namespace micro {
 
+      // arg communicate between RPCs
+      struct MicroArg {
+        uint64_t id;
+        uint64_t version;
+      };
+
+
       // 2 dummy handlers for test, they only send a dummy reply
       void MicroWorker::tx_one_shot_handler2(int id,int cid,char *msg,void *arg) {
         char *reply_msg = rpc_handler_->get_reply_buf();
@@ -38,8 +45,9 @@ namespace nocc {
       // This RPC is designed to yield out
       void MicroWorker::tx_one_shot_handler(yield_func_t &yield,int id,int cid,char *input) {
         char *reply_msg = rpc_handler_->get_reply_buf();
-
-        uint64_t remote_id = *((uint64_t *)input);
+        MicroArg *arg = (MicroArg *)input;
+        ASSERT_PRINT(tx_ != NULL,stderr,"tx_ %d, routine id %d\n",cor_id_, routine_meta_->id_);
+        tx_->get_ro_versioned(TAB,arg->id,reply_msg,arg->version,yield);
         rpc_handler_->send_reply(CACHE_LINE_SZ,id,cid);
         return;
       }
@@ -100,8 +108,11 @@ namespace nocc {
         int read_ratio = distributed_ratio;
         set<uint64_t> id_set;
         char *req_buf = msg_buf_alloctors[cor_id_].get_req_buf();
+        MicroArg *arg = (MicroArg *)req_buf;
         char *reply_buf = (char *)malloc(CACHE_LINE_SZ);
+
         tx_->begin();
+        arg->version = ((DBRad *)tx_)->timestamp;
 #if 1
         for(uint i = 0;i < 10;++i) {
           uint64_t id;
@@ -112,12 +123,12 @@ namespace nocc {
 
           int pid = AcctToPid(id);
 
-          bool ro = random_generator[cor_id_].next() % 100 <= read_ratio;ro = false;
+          bool ro = random_generator[cor_id_].next() % 100 <= read_ratio;
           int idx = 0;
           if(ro) {
-            *((uint64_t *)req_buf) = id;
+            arg->id = id;
             rpc_handler_->prepare_multi_req(reply_buf,1,cor_id_);
-            rpc_handler_->append_req(req_buf,RPC_READ,sizeof(uint64_t),pid,cor_id_,1);
+            rpc_handler_->append_req(req_buf,RPC_READ,sizeof(MicroArg),pid,cor_id_,1);
             indirect_yield(yield);
           } else {
             //fprintf(stdout,"add to %d, key %lu\n",pid,id);

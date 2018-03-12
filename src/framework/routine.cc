@@ -73,7 +73,7 @@ namespace nocc {
       ro_pool = new std::queue<RoutineMeta *>();
       for(uint i = 0;i < num_ros;++i) {
         RoutineMeta *meta = new RoutineMeta;
-        meta->prev_ = NULL; meta->next_ = NULL; meta->id_ = coroutine_num + 1;// a magic number
+        meta->prev_ = NULL; meta->next_ = NULL; meta->id_ = coroutine_num;// a magic number
         meta->routine_ = new coroutine_func_t(bind(one_shot_func,_1,meta));
         ro_pool->push(meta);
       }
