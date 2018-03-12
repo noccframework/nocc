@@ -28,7 +28,6 @@ namespace nocc {
 
         fprintf(out,"%s",buf);
       }
-
     }; // class Debugger
   }
 #define ASSERT_PRINT(exp,file,fmt,...) {if(unlikely(!(exp))) {Debugger::debug_fprintf(file,fmt, ##__VA_ARGS__); assert(false);} }

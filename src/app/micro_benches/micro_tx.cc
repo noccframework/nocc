@@ -7,6 +7,7 @@
 #include "db/txs/db_farm.h"
 
 #include "util/util.h"
+#include "util/mapped_log.h"
 
 #include "framework/req_buf_allocator.h"
 
@@ -16,6 +17,8 @@ extern size_t total_partition;
 
 #include "../smallbank/bank_worker.h"
 using namespace nocc::oltp::bank; // use smallbank as the default workload
+
+extern __thread MappedLog local_log;
 
 namespace nocc {
 
@@ -44,11 +47,12 @@ namespace nocc {
 
       // This RPC is designed to yield out
       void MicroWorker::tx_one_shot_handler(yield_func_t &yield,int id,int cid,char *input) {
-        char *reply_msg = rpc_handler_->get_reply_buf();
+        //char *reply_msg = rpc_handler_->get_reply_buf();
         MicroArg *arg = (MicroArg *)input;
-        ASSERT_PRINT(tx_ != NULL,stderr,"tx_ %d, routine id %d\n",cor_id_, routine_meta_->id_);
-        tx_->get_ro_versioned(TAB,arg->id,reply_msg,arg->version,yield);
-        rpc_handler_->send_reply(CACHE_LINE_SZ,id,cid);
+        char buf[CACHE_LINE_SZ];
+        tx_->get_ro_versioned(TAB,arg->id,buf,arg->version,yield);
+        char *reply_msg = rpc_handler_->get_reply_buf();
+        rpc_handler_->send_reply(CACHE_LINE_SZ,id,reply_msg,cid);
         return;
       }
 
@@ -136,7 +140,6 @@ namespace nocc {
             assert(idx == 0);
             auto replies = tx_->remoteset->do_reads(i);
             indirect_yield(yield);
-            //fprintf(stdout,"done\n");
             tx_->get_remote_results(replies);
 
             char *buf = NULL;

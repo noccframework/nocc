@@ -357,20 +357,24 @@ extern size_t total_partition;
 
               inline uint64_t
               DBRad::_get_ro_naive(int tableid,uint64_t key,char *val,uint64_t version,yield_func_t &yield) {
+
                 int vlen = txdb_->_schemas[tableid].vlen;
                 MemNode *node = txdb_->stores_[tableid]->GetWithInsert(key);
                 uint64_t ret = 0; // return the sequence value
+                assert(node != NULL);
 
                 uint64_t origin = node->read_ts;
                 uint64_t tentative_timestamp = MAX(version,origin);
 
                 volatile uint64_t *lockptr = &(node->lock); // share the lock with writer
-                if(tentative_timestamp == version) {
+                if(tentative_timestamp == version) { // The set timestamp is larger
               read_retry:
                   if(*lockptr != 0 ||
-                     !__sync_bool_compare_and_swap(lockptr,0,
-                                                   73)) {
+                     (!__sync_bool_compare_and_swap(lockptr,0,
+                                                    ENCODE_LOCK_CONTENT(current_partition,thread_id,73 + cor_id_)))
+                     ) {
                     worker->yield_next(yield);
+                    asm volatile("" ::: "memory");
                     goto read_retry;
                   }
                   node->read_ts = tentative_timestamp; // set the timestamp
@@ -393,7 +397,7 @@ extern size_t total_partition;
               read_retry:
                 uint64_t origin = node->read_ts;
                 uint64_t tentative_timestamp = MAX(version,origin);
-                if(tentative_timestamp != version) {
+                if(tentative_timestamp == version) {
                   __lock_ts(&(node->read_lock));
                   node->read_ts = tentative_timestamp;
                   __release_ts(&(node->read_lock));
@@ -507,6 +511,7 @@ retry:
 
               uint64_t DBRad::get_ro_versioned(int tableid, uint64_t key, char *val, uint64_t version,yield_func_t &yield) {
                 return _get_ro_versioned_helper(tableid,key,val,version,yield);
+                //return _get_ro_naive(tableid,key,val,version,yield);
               }
 
               uint64_t DBRad::get(int tableid, uint64_t key, char **val,int len) {
