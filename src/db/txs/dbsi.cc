@@ -261,9 +261,8 @@ namespace nocc {
             rpc_handler_->register_callback(std::bind(&DBSI::release_rpc_handler,this,_1,_2,_3,_4),RPC_RELEASE);
             rpc_handler_->register_callback(std::bind(&DBSI::commit_rpc_handler2,this,_1,_2,_3,_4),RPC_COMMIT);
 
-
 #if 1
-            // publish the QP vector
+            // get the QP vector
             auto rdma_cm = tm->cm_;
             for(uint i = 0;i < rdma_cm->get_num_nodes();++i) {
                 auto qp = rdma_cm->get_rc_qp(thread_id,i,1); // use QP at idx 1
@@ -545,8 +544,8 @@ namespace nocc {
                             remoteset = new RemoteSet(rpc_handler_,cor_id_,thread_id);
                             ts_buffer_ = (uint64_t *)(Rmalloc(sizeof(uint64_t ) * (ts_manager_->total_partition + 1)));
                             assert(ts_buffer_ != NULL);
+                            ts_manager_->thread_local_init();
                             localinit = true;
-
                         }
                     }
 
@@ -596,12 +595,14 @@ namespace nocc {
                             goto ABORT;
 
                         /* get commit ts */
-                        commit_ts = ts_manager_->commit_ts();
-#ifdef SI_VEC
-                        encoded_commit_ts = SI_ENCODE_TS(current_partition,commit_ts);
+                        commit_ts = ts_manager_->get_commit_ts();
+#if LARGE_VEC == 1
+                        encoded_commit_ts = SI_ENCODE_TS(current_partition * nthreads + thread_id,
+                                                         commit_ts);
 #else
-                        encoded_commit_ts = commit_ts;
+                        encoded_commit_ts = SI_ENCODE_TS(current_partition,commit_ts);
 #endif
+
 #if USE_LOGGER
                         if(db_logger_){
                             db_logger_->log_backups(cor_id_, encoded_commit_ts);
@@ -626,18 +627,26 @@ namespace nocc {
                     }
 
                     void DBSI::commit_ts(uint64_t ts) {
+                        // set the meta data for posting commit timestamp
+                        *ts_buffer_ = ts;
+                        Qp *qp = qp_vec_[ts_manager_->master_id_];
+#if LARGE_VEC == 1
+                        uint64_t offset = current_partition * nthreads + thread_id;
+                        auto send_flag = 0;
+                        auto ret = qp->rc_post_send(IBV_WR_RDMA_WRITE,(char *)ts_buffer_,sizeof(uint64_t),
+                                                    offset * sizeof(uint64_t),IBV_SEND_SIGNALED);
+                        assert(ret == Qp::IO_SUCC);
+                        qp->poll_completion(); // FIXME!! no error detection now
+#else
                         // update the commit timestamp, using dedicated QP
-
-                        //                        while(ts_manager_->last_ts_ != ts - 1) {
-                        //asm volatile("" ::: "memory");
-                        //}
+                        while(ts_manager_->last_ts_ != ts - 1) {
+                            asm volatile("" ::: "memory");
+                        }
                         // this is the distributed SI case
                         // an RDMA write is needed
                         {
                             // must be **synchronously** posted, otherwise a later one may be overwritten by other
                             // threads
-                            *ts_buffer_ = ts;
-                            Qp *qp = qp_vec_[ts_manager_->master_id_];
 #define OPT 0
 #if !OPT
                             auto send_flag = 0;
@@ -661,7 +670,8 @@ namespace nocc {
 
                         asm volatile("" ::: "memory");
                         ts_manager_->last_ts_ += 1;
-                    }
+#endif                // end post per_mac timestamp
+                    } // end commit ts function
 
                     void DBSI::abort() {
 #if USE_LOGGER

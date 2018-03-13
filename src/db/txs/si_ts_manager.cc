@@ -24,20 +24,15 @@ void *pthread_call_wrapper1 (void *arg) {
 
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-
 using namespace rdmaio;
 
 namespace nocc {
 
   namespace db {
-
-#define MSG_CHANNEL_SZ 1024
-
-    uint64_t *headers = NULL;
-    uint64_t *tailers = NULL;
-    char **msg_channels = NULL;
-
     __thread char *local_write_buffer = NULL;
+#if LARGE_VEC == 1
+    __thread uint64_t TSManager::local_timestamp_ = 0;
+#endif
 
     TSManager::TSManager(RdmaCtrl *cm,uint64_t addr,int id,int master_id,int wid)
       : cm_(cm),
@@ -45,29 +40,17 @@ namespace nocc {
         id_(id),
         master_id_(master_id),
         worker_id_(wid),
-        fetched_ts_buffer_(NULL)
+        fetched_ts_buffer_(NULL),
+        total_partition(cm_->get_num_nodes())
     {
+#if LARGE_VEC == 0
       local_timestamp_ = 3;
       last_ts_ = local_timestamp_ - 1;
-
-      /* maybe some sanity checks? */
-      /* start the monitor */
-      this->total_partition = cm_->get_num_nodes();
-      RThreadLocalInit();
-
       tv_size_ = this->total_partition * sizeof(uint64_t);
-
-      headers = new uint64_t[nthreads];
-      tailers = new uint64_t[nthreads];
-      msg_channels = new char *[nthreads];
-
-      for(uint i = 0;i < nthreads;++i) {
-        headers[i] = 0;
-        tailers[i] = 0;
-        msg_channels[i] = new char[MSG_CHANNEL_SZ];
-        memset(msg_channels[i],0,MSG_CHANNEL_SZ);
-      }
-
+#else
+      tv_size_ = this->total_partition * sizeof(uint64_t) * nthreads;
+#endif
+      RThreadLocalInit();
       // create qps
       {
         int use_port = 0;
@@ -79,11 +62,10 @@ namespace nocc {
         cm->open_device(dev_id);
         cm->register_connect_mr(dev_id); // register memory on the specific device
 
-        for(uint i = 0;i < cm->get_num_nodes();++i) {
+        for(uint i = 0;i < total_partition;++i) {
           Qp *qp1 = cm->create_rc_qp(worker_id_,i,dev_id,port_idx);
         }
 
-        //fprintf(stdout,"[WORKER %d] start connect qps\n",worker_id_);
         while(1) {
           int connected = 0;
           for(uint i = 0;i < cm->get_num_nodes();++i) {
@@ -100,21 +82,19 @@ namespace nocc {
           }
           if(connected == cm->get_num_nodes()) break;
           else {
-            //fprintf(stdout,"[WORKER %d] connect %d\n",connected);
             sleep(1);
           }
         }
-
         // end create qps
       }
 
-
+      // Start the monitor
       if(1) {
         poller = std::bind(&TSManager::timestamp_poller,this,_1);
         pthread_t tid;
         pthread_create(&tid,NULL,pthread_call_wrapper1,NULL);
       }
-#if 1
+#if 1 // wait for the timestamp to be fetched
       while(fetched_ts_buffer_ == NULL) {
         asm volatile("" ::: "memory");
       }
@@ -123,21 +103,18 @@ namespace nocc {
 
     void *TSManager::timestamp_poller(void *) {
       // Maybe bind?
-#ifndef SI_TX
-      assert(false);
-#endif
+
       RThreadLocalInit();
       assert(total_partition < 64);
-      uint64_t *local_buffer = (uint64_t *)Rmalloc(sizeof(uint64_t) *  64);
+      uint64_t *local_buffer = (uint64_t *)Rmalloc(tv_size_);
 
-      uint64_t *fetched_ts = new uint64_t[total_partition];
-      uint64_t *target_ts  = new uint64_t[total_partition];
+      uint64_t *fetched_ts = (uint64_t *)(new char[tv_size_]);
+      uint64_t *target_ts  = (uint64_t *)(new char[tv_size_]);
 
-      /*
-        First init the timestamp manager
-      */
-      for(uint i = 0;i < total_partition;++i)
-        fetched_ts[i] = last_ts_;
+      // First init the timestamp manager
+
+      for(uint i = 0;i < tv_size_ / sizeof(uint64_t);++i)
+        fetched_ts[i] = local_timestamp_ - 1;
 
       fetched_ts_buffer_ = (char *)fetched_ts;
       char *temp = (char *)target_ts;
@@ -157,32 +134,16 @@ namespace nocc {
       }
     }
 
-    void TSManager::post_commit_ts(uint64_t ts,int tid) {
-#ifdef SI_VEC
-    retry:
-      /* the monitor has not processed all the stuff yet */
-      if(unlikely(headers[tid] - tailers[tid] >= MSG_CHANNEL_SZ)) {
-        asm volatile("" ::: "memory");
-        goto retry;
-      }
-      char *msg_channel = msg_channels[tid];
-      uint64_t *m_ptr = (uint64_t *)(msg_channel + (headers[tid] % MSG_CHANNEL_SZ));
-      headers[tid] += sizeof(uint64_t);
-      asm volatile("" ::: "memory");
-      *m_ptr = ts;
-#else
-      if(NULL == local_write_buffer) {
-        RThreadLocalInit();
-        local_write_buffer = (char *)Rmalloc(sizeof(uint64_t));
-      }
-      *((uint64_t *)local_write_buffer) = ts;
-      /* i still think this is a problem */
-#endif
-    }
-
     void TSManager::get_timestamp(char *buffer, int tid) {
       memcpy(buffer,fetched_ts_buffer_,tv_size_);
       return ;
+    }
+
+    void TSManager::thread_local_init() {
+      // This function can be called many times
+#if LARGE_VEC == 1
+      local_timestamp_ = 3;
+#endif
     }
   };
 };

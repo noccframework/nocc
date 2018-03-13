@@ -21,15 +21,6 @@ struct _SIValHeader {
     uint64_t  version;
 };
 
-/* timestamp structure
-   | 1 lock bit | 7 bit server id | server's local counter |
-*/
-#define SI_TS_MASK  (0xffffffffffffff)
-#define SI_SERVER_MASK (0xff)
-
-#define SI_GET_SERVER(x) ( ((x) >> 56) & SI_SERVER_MASK)
-#define SI_GET_COUNTER(x) ((x) & SI_TS_MASK)
-#define SI_ENCODE_TS(s,t) (((s) << 56) | (t))
 
 namespace nocc  {
     namespace db {

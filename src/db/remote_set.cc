@@ -342,7 +342,6 @@ namespace nocc {
         ReplyHeader *r_header = (ReplyHeader *)ptr;
         int num_entries = r_header->num_items_;
         ptr += sizeof(ReplyHeader);
-        ASSERT_PRINT(num_entries == 1,stderr,"num %d\n",num_entries);
         for(uint j = 0;j < num_entries;++j) {
 
           RemoteSetReplyItem *pr = (RemoteSetReplyItem *)ptr;
@@ -354,7 +353,6 @@ namespace nocc {
           requests[pr->idx].node = pr->node;
           requests[pr->idx].seq  = pr->seq;
           ptr += (sizeof(RemoteSetReplyItem) + pr->payload);
-          assert(pr->payload == CACHE_LINE_SZ);
         }
       }
       reply_buf_size_ = (ptr - reply_buf_);
@@ -618,7 +616,6 @@ namespace nocc {
     RemoteSet::add(REQ_TYPE type,int pid,int8_t tableid,uint64_t key) {
 
       assert(elems_ + 1 <= max_length_);
-      assert(elems_ == 0);
       int cur = elems_;
       elems_++;
       kvs_[cur].pid = pid;
