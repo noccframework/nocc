@@ -309,7 +309,7 @@ namespace nocc {
         }
 
         static inline ALWAYS_INLINE void      SanityCheckDistrict (const district::value *v) {
-          INVARIANT(v->d_next_o_id >= 3001);
+          INVARIANT(v->d_next_o_id >= 3001 && v->d_next_o_id < 1000000);
           INVARIANT(v->d_state.size() == 2);
           INVARIANT(v->d_zip == "123456789");
         }

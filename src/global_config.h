@@ -10,7 +10,7 @@
 #define QP_NUMS 5
 
 // logger related configuration
-#define USE_LOGGER 1
+#define USE_LOGGER 0
 #define LOGGER_USE_RPC 2
 #define USE_BACKUP_STORE 1
 #define USE_BACKUP_BENCH_WORKER 0

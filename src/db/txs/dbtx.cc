@@ -6,6 +6,8 @@
 #include "app/config.h"
 #include "framework/framework.h"
 
+#include "util/printer.h"
+
 #include <unistd.h>
 #include <algorithm>
 
@@ -16,9 +18,10 @@
 
 // 1: use copy to install the new value
 // 0: replace the old value with the new value pointer
-#define COPY 1
+#define COPY 0
 
 using namespace nocc::oltp;
+using namespace nocc::util;
 
 extern size_t nthreads;
 extern size_t current_partition;
@@ -838,7 +841,7 @@ void DBTX::delete_(int tableid,uint64_t key) {
         // printf("delete_ size:%d ,key:%lu\n",item.len, item.key);
         prepare_log(cor_id_, db_logger_, item);
       }
-#endif 
+#endif
       return;
     }
   }
@@ -1182,7 +1185,7 @@ DBTX::abort() {
 #endif
 }
 
-DBTXIterator::DBTXIterator(DBTX* tx, int tableid,bool sec)
+DBTXIterator::DBTXIterator(DBTX* tx, int tableid,bool sec) : tableid(tableid)
 {
   tx_ = tx;
   if(sec) {
@@ -1287,9 +1290,10 @@ void DBTXIterator::Seek(uint64_t key)
 
     //put the previous node's next field into the readset
 
-    printf("Not Valid!\n");
+    //printf("Not Valid!\n");
     //sleep(20);
     //assert(false);
+    //ASSERT_PRINT(false,stderr,"Tableid %d\n",tableid);
     tx_->readset->AddNext(iter_->GetLink(), iter_->GetLinkTarget());
     return;
   }

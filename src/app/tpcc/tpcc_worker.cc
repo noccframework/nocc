@@ -4,6 +4,8 @@
 
 #include "db/forkset.h"
 
+#include "util/printer.h"
+
 #include <set>
 #include <limits>
 #include <boost/bind.hpp>
@@ -24,6 +26,8 @@ extern size_t current_partition;
 extern size_t total_partition;
 
 //#define RC
+
+using namespace nocc::util;
 
 namespace nocc {
 
@@ -52,13 +56,13 @@ namespace nocc {
           warehouse_id_start_(warehouse_id_start),
           warehouse_id_end_(warehouse_id_end)
       {
-        // assert(NumWarehouses() <= 720);
+         assert(NumWarehouses() <= 720);
         // init last warehouse id
-        // for(uint w = 0;w < NumWarehouses();++w) {
-        //   for(uint d = 0;d < NumDistrictsPerWarehouse();++d) {
-        //     last_no_o_ids_[w][d] = 3000; // 3000 is magic number, which is the init num of new order
-        //   }
-        // }
+        for(uint w = 0;w < NumWarehouses();++w) {
+          for(uint d = 0;d < NumDistrictsPerWarehouse();++d) {
+            last_no_o_ids_[w][d] = 0; // 3000 is magic number, which is the init num of new order
+          }
+        }
 
         // init lat profiling variables
         INIT_LAT_VARS(read);
@@ -325,18 +329,9 @@ namespace nocc {
 #if 0 // sanity checks
         if(res == true && current_partition == 0) {
           // sanity checks
-          uint64_t s_key = remote_stocks[0];
-          stock::value *s_value;
-
-          uint64_t seq   = tx_->get_cached(STOC,s_key,(char **)(&s_value));
-          fprintf(stdout,"cached stock value %d, seq %lu\n",s_value->s_quantity,seq);
-          sleep(2); //wait for the value to be commit at remote
-
-          tx_->begin();
-          tx_->add_to_remote_set(STOC,s_key,current_partition == 1?0:1);
-          uint64_t seq2  = tx_->get_cached(STOC,s_key,(char **)(&s_value));
-          fprintf(stdout,"cached stock value %d, seq2 %lu\n",s_value->s_quantity,seq2);
-          exit(-1);
+          district::value *d_value;
+          auto d_seq = tx_->get(DIST,d_key,(char **)(&d_value),sizeof(district::value));
+          assert(d_value->d_next_o_id == my_next_o_id + 1);
         }
 #endif
         return txn_result_t(res,0);
@@ -568,6 +563,8 @@ namespace nocc {
 
       txn_result_t TpccWorker::txn_delivery(yield_func_t &yield) {
 
+        static __thread int counter = 0;
+
         const uint warehouse_id = PickWarehouseId(rand_generator_, warehouse_id_start_, warehouse_id_end_);
         const uint o_carrier_id = RandomNumber(rand_generator_, 1, NumDistrictsPerWarehouse());
         const uint32_t ts = GetCurrentTimeMillis();
@@ -600,17 +597,19 @@ namespace nocc {
 
             if (no_key <= end) {
               no_o_id = static_cast<int32_t>(no_key << 32 >> 32);
+              //fprintf(stderr,"delete %d %d, no key %lu\n",warehouse_id - 1,d-1, no_o_id);
               tx_->delete_(NEWO, no_key);
               // update here
-              //if(no_o_id > 1392478544 - 100000) {
-              //                fprintf(stdout,"delete no id for key %d %d => %d\n",warehouse_id,d,no_o_id);
-              //}
-              //assert(last_no_o_ids_[warehouse_id - 1][d-1] == no_o_id);
+              ASSERT_PRINT((last_no_o_ids_[warehouse_id - 1][d-1] == no_o_id) || (last_no_o_ids_[warehouse_id - 1][d-1] == 0),
+                           stderr,"Last %lu, me %lu\n",last_no_o_ids_[warehouse_id - 1][d-1],no_o_id);
               last_no_o_ids_[warehouse_id - 1][d-1] = no_o_id + 1;
             }
             else {
               no_key = -1;
             }
+          } else {
+            fprintf(stderr,"last no order id %lu, ware %d, d %d\n",last_no_o_ids_[warehouse_id - 1][d-1],warehouse_id,d);
+            assert(false);
           }
           if (no_key == -1) {
             iter.SeekToFirst();

@@ -5,7 +5,7 @@
 #define ATOMIC_LOCK  0
 #define ONE_WRITE    0
 #define LONG_KEY     1
-#define NO_EXE_ABORT 1
+#define NO_EXE_ABORT 0
 #define LOCAL_LOCK_USE_RDMA 0
 
 

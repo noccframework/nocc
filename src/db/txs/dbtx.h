@@ -207,6 +207,7 @@ class DBTXIterator : public TXIterator {
   uint64_t *val_;
   uint64_t *prev_link;
   Memstore::Iterator *iter_;
+  int tableid;
 };
 
 
