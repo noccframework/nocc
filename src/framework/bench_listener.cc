@@ -238,7 +238,8 @@ namespace nocc {
               auto m_l = timer.report_medium() / second_cycle * 1000;
               auto m_9 = timer.report_90() / second_cycle * 1000;
               auto m_99 = timer.report_99() / second_cycle * 1000;
-              std::cout << m_l << " " << m_9<<" " <<m_99<<std::endl;
+              fprintf(stdout,"Medium latency %3f ms, 90th latency %3f ms, 99th latency %3f ms\n",
+                      m_l,m_9,m_99);
 #ifdef LOG_RESULTS
               log_file << m_l << " " << m_9<<" " <<m_99<<std::endl;
 #endif
