@@ -273,8 +273,7 @@ namespace nocc {
 #endif
 
         /* operation remote objects */
-        for(uint i = 20;i < num_remote_stocks;++i) {
-          continue;
+        for(uint i = 0;i < num_remote_stocks;++i) {
           const uint ol_i_id = remote_item_ids[i];
           const uint ol_quantity = RandomNumber(rand_generator_, 1, 10);
 
@@ -316,7 +315,7 @@ namespace nocc {
 #endif
 
 
-#if 0 //!ONLY_EXE
+#if  !ONLY_EXE
         bool res = tx_->end(yield);
 #else
         bool res = true;

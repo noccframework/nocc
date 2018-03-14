@@ -64,7 +64,7 @@ void DBTX::get_rpc_handler(int id,int cid,char *msg,void *arg) {
 #endif
 
   struct RemoteSet::ReplyHeader *r_header = (struct RemoteSet::ReplyHeader *)reply_msg;
-  num_items = 0;
+
   for(int i = 0;i < num_items;++i) {
     RemoteSet::RemoteSetRequestItem *header = (RemoteSet::RemoteSetRequestItem *)traverse_ptr;
     traverse_ptr += sizeof(RemoteSet::RemoteSetRequestItem);
