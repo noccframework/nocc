@@ -25,8 +25,8 @@
 #define PROFILE_SERVER_NUM 0 // whether profile number of server accessed per TX
 
 // other stuffs
-#define ONE_SIDED     1
-#define CACHING       1
+#define ONE_SIDED     0
+#define CACHING       0
 
 // end of global configuration
 #endif
