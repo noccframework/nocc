@@ -6,9 +6,13 @@
 #include "tpcc_schema.h"
 #include "framework/log_cleaner.h"
 
+#include "util/rtm.h"
+
 extern size_t nthreads;
 extern size_t current_partition;
 
+#define WARE_NOT_FOUND    -1
+#define OUT_OF_DATE_ENTRY -2
 
 namespace nocc {
   namespace oltp {
@@ -37,30 +41,31 @@ namespace nocc {
           case DIST:
             w_id = districtKeyToWare(key);
             break;
-          // case WARE:
-          //   w_id = key;
-          //   break;
+          case WARE:
+            w_id = key;
+            break;
           case NEWO:
             w_id = newOrderKeyToWare(key);
             if(length == 0){
               need_check_vlen = false;
             }
             break;
-          // case CUST:
-          //   w_id = customerKeyToWare(key);
-          //   break;
+          case CUST:
+            w_id = customerKeyToWare(key);
+            break;
           case ORLI:
             w_id = orderLineKeyToWare(key);
             break;
           case ORDE:
             w_id = orderKeyToWare(key);
             break;
-          // case CUST_INDEX:
+          case CUST_INDEX:
           case ORDER_INDEX:
+          case HIST:
             return 0;
           default:
             // if(table_id >= 0 && table_id <= 10)return 0;
-            //fprintf(stdout,"recv tab %d key %lu seq %lu\n",table_id,key,seq);
+            fprintf(stdout,"recv tab %d key %lu seq %lu\n",table_id,key,seq);
             assert(false);
           }
 
@@ -68,13 +73,12 @@ namespace nocc {
           assert(p_id >= 0 && p_id < 16);
           if(backup_stores_.find(p_id) == backup_stores_.end()){
             // printf("log_cleaner: %d\n", p_id);
-            return -1;
+            return WARE_NOT_FOUND;
           }
           MemDB* db = backup_stores_[p_id];
           
           int vlen = db->_schemas[table_id].vlen;          
-          if(need_check_vlen)
-            assert(vlen == length);
+          if(need_check_vlen) assert(vlen == length);
           
           // printf("table:%d, key: %lu, partition:%d \n",table_id, key, p_id );
           MemNode *node = db->stores_[table_id]->GetWithInsert(key);
@@ -103,10 +107,9 @@ namespace nocc {
                 w_id -= 1;
                 d_id = 10;
               }
-              // hard coded here to delete the new order entry
 
-              // last_no_o_ids_[w_id - 1][d_id - 1] = no_o_id + 1;
 
+              // lock
               uint64_t *&val_ptr = node->value;
               if(val_ptr != NULL)
                 free(val_ptr);
@@ -114,6 +117,7 @@ namespace nocc {
 
               return 0;
             }
+
           }
 
           volatile uint64_t *lockptr = &(node->lock);
@@ -123,7 +127,7 @@ namespace nocc {
           }
           if(node->seq >= seq){
             *lockptr = 0;
-            return -2;
+            return OUT_OF_DATE_ENTRY;
           }
           uint64_t *&val_ptr = node->value;
           if(val_ptr == NULL){
