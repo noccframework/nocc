@@ -194,7 +194,6 @@ namespace nocc {
         district::value *d_value;
         auto d_seq = tx_->get(DIST,d_key,(char **)(&d_value),sizeof(district::value));
         checker::SanityCheckDistrict(d_value);
-        //fprintf(stdout,"get dist seq %lu\n",d_seq);
 
         const uint64_t my_next_o_id = d_value->d_next_o_id;
 
@@ -265,7 +264,8 @@ namespace nocc {
           indirect_yield(yield); // yield to get the result
 
 #if FASST == 0
-          tx_->get_remote_results(num_servers);
+          tx_->get_remote_results(num_servers); //num_servers?
+          //tx_->get_remote_results(num_remote_stocks);
 #else
           ret = tx_->remoteset->get_results_readlock(num_servers);
 #endif
@@ -315,7 +315,7 @@ namespace nocc {
 #endif
 
 
-#if !ONLY_EXE
+#if  !ONLY_EXE
         bool res = tx_->end(yield);
 #else
         bool res = true;

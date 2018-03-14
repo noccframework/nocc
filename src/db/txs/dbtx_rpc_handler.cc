@@ -177,20 +177,6 @@ void DBTX::get_rpc_handler(int id,int cid,char *msg,void *arg) {
       assert(false);
     }
   }
-  //  assert(num_item_fetched > 0);
-  if(unlikely(num_item_fetched == 0)) {
-    char *traverse_ptr = msg + sizeof(RemoteSet::RequestHeader);
-
-    for(int i = 0;i < num_items;++i) {
-      RemoteSet::RemoteSetRequestItem *header = (RemoteSet::RemoteSetRequestItem *)traverse_ptr;
-      fprintf(stdout,"%d fetch pid\n",header->pid);
-      traverse_ptr += sizeof(RemoteSet::RemoteSetRequestItem);
-    }
-    //    assert(false);
-    //  }
-    //fprintf(stdout,"from tx %d, num %d\n",g_header->tx_id,g_header->num);
-    assert(false);
-  }
   /* send reply */
   r_header->num_items_ = num_item_fetched;
   r_header->payload_   = reply_msg_t - reply_msg;

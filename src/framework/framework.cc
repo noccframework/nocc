@@ -68,7 +68,7 @@ namespace nocc {
   __thread RPCMemAllocator *msg_buf_alloctors = NULL;
 
   __thread db::TXProfile  *profile;
-  __thread db::TXProfile   profiles[16];
+  __thread db::TXProfile   profiles[20];
 
 #ifdef RPC_TIMEOUT_FLAG
   __thread struct  timeval   *routine_timeouts_;
@@ -207,7 +207,7 @@ namespace nocc {
         }
 
         // init tx profile
-        for(uint i = 0;i < 16;++i)
+        for(uint i = 0;i < 20;++i)
           profiles[i].reset();
 
         // init workloads
@@ -388,9 +388,10 @@ namespace nocc {
 
     void BenchWorker::default_thread_local_init() {
 
-      InitThreadContext(this);
       // init RDMA related stuffs
       RThreadLocalInit();   // Rmalloc
+
+      InitThreadContext(this);
 
       // init coroutine related data
       RoutineMeta::thread_local_init(256);

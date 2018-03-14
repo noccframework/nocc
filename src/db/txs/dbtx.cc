@@ -1089,7 +1089,6 @@ bool DBTX::end_fasst(yield_func_t &yield) {
 
 bool
 DBTX::end(yield_func_t &yield) {
-  //assert(false);
 
 #if ONLY_EXE
   remoteset->update_read_buf();
