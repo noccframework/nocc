@@ -17,8 +17,8 @@ namespace nocc {
     class RPCMemAllocator {
     public:
 
-      // must be created after RThreadlocalinit
       RPCMemAllocator() {
+        RThreadLocalInit();
         for(int i = 0;i < MAX_INFLIGHT_REQS;++i) {
 #if 1
           buf_pools_[i] = (char *)Rmalloc(MAX_MSG_SIZE);

@@ -69,11 +69,6 @@ namespace nocc {
       assert(sizeof(rpc_header::meta) == sizeof(uint32_t));
       clear_reqs();
 
-      for(uint i = 0;i < 16;++i) {
-        routine_counters_[i] = 0;
-        received_counters_[i] = 0;
-      }
-
 #ifdef TIMER
       // clear timers
       rpc_timer.report();
@@ -224,9 +219,9 @@ namespace nocc {
 #ifdef RPC_CHECKSUM
       header->checksum = rad_checksum((char *)msg_buf_ + sizeof(uint64_t) + sizeof(struct rpc_header),size,
                                       rpc_id,size);
-      header->counter = routine_counters_[cid];
+      //header->counter = routine_counters_[cid];
       //      if(thread_id_ != nthreads) fprintf(stdout,"send counter %lu\n",routine_counters_[cid]);
-      routine_counters_[cid] += 1;
+      //routine_counters_[cid] += 1;
 #endif
 
 #ifdef TIMER
@@ -267,9 +262,9 @@ namespace nocc {
 #ifdef RPC_CHECKSUM
       header->checksum = rad_checksum((char *)msg_buf_ + sizeof(uint64_t) + sizeof(struct rpc_header),size,
                                       rpc_id,size);
-      header->counter = routine_counters_[cid];
+      //header->counter = routine_counters_[cid];
       //      if(thread_id_ != nthreads) fprintf(stdout,"send counter %lu\n",routine_counters_[cid]);
-      routine_counters_[cid] += 1;
+      //routine_counters_[cid] += 1;
 #endif
 
 #ifdef TIMER

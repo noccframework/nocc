@@ -157,9 +157,9 @@ namespace nocc {
     }
 
     bool RemoteSet::validate_remote(yield_func_t &yield) {
-
       bool ret = true;
-      if(need_validate_ && read_server_num_ > 0 && read_items_ > 0) {
+      //if(need_validate_ && read_server_num_ > 0 && read_items_ > 0) {
+      if(0){
 
         rpc_handler_->set_msg((char *)request_buf_);
         //assert(request_buf_end_ - request_buf_ < 1024);

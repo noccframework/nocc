@@ -47,7 +47,7 @@ namespace nocc {
 
   // global profile
   extern __thread TXProfile  *profile;
-  extern __thread TXProfile   profiles[16];
+  extern __thread TXProfile   profiles[20];
 
   namespace oltp {
 

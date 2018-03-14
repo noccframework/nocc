@@ -12,7 +12,7 @@
 // rpc related stuffs
 //#define RPC_TIMEOUT_FLAG
 #define RPC_TIMEOUT_TIME 10000000
-#define RPC_VERBOSE
+//#define RPC_VERBOSE
 //#define RPC_CHECKSUM
 #define MAX_INFLIGHT_REPLY 2048
 #define MAX_INFLIGHT_REQS  768

@@ -149,8 +149,8 @@ namespace nocc {
       size_t nrpc_processed_;
 
       /* used for debug*/
-      uint64_t routine_counters_[16];
-      uint64_t received_counters_[16];
+      //      uint64_t routine_counters_[16];
+      //uint64_t received_counters_[16];
 
       uint64_t nrpc_polled_; // average rpc handled per poll_comps
 #ifdef TIMER

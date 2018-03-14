@@ -725,7 +725,7 @@ void DBTX::insert(int tableid, uint64_t key, char *val, int len) {
   RWSet::RWSetItem item;
   item.addr = (uint64_t *) (new char[vlen]);
   memset(item.addr,0,META_LENGTH);
-  memcpy( (char *)item.addr + META_LENGTH, val,len);
+  //memcpy( (char *)item.addr + META_LENGTH, val,len);
 
  retry:
 #if COPY == 1
@@ -1089,7 +1089,7 @@ bool DBTX::end_fasst(yield_func_t &yield) {
 
 bool
 DBTX::end(yield_func_t &yield) {
-  //assert(false);
+  assert(false);
 
 #if ONLY_EXE
   remoteset->update_read_buf();
