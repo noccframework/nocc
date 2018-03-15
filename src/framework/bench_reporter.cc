@@ -144,8 +144,10 @@ namespace nocc {
       for(uint i = 0;i < workers_->size();++i) {
 
         uint64_t snap = (*workers_)[i]->ntxn_commits_;
-        fprintf(stdout,"worker %d, %lu\n",i,snap - prevs[i]);
-        sum += (snap - prevs[i]);
+        auto res = snap - prevs[i];
+        if(res == 0)
+          fprintf(stdout,"worker %d, %lu\n",i,res);
+        sum += res;
         assert(snap >= prevs[i]);
         prevs[i] = snap;
       }
